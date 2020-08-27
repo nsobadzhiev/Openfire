@@ -65,6 +65,7 @@ public class AdminConsole {
      */
     public static void addModel(String name, InputStream in) throws Exception {
         SAXReader saxReader = new SAXReader();
+        saxReader.setIgnoreComments(true);
         Document doc = saxReader.read(in);
         addModel(name, (Element)doc.selectSingleNode("/adminconsole"));
     }
@@ -214,6 +215,7 @@ public class AdminConsole {
         }
         try {
             SAXReader saxReader = new SAXReader();
+            saxReader.setIgnoreComments(true);
             Document doc = saxReader.read(in);
             coreModel = (Element)doc.selectSingleNode("/adminconsole");
         }
@@ -223,8 +225,8 @@ public class AdminConsole {
         try {
             in.close();
         }
-        catch (Exception ignored) {
-            // Ignore.
+        catch (Exception ex) {
+            Log.debug("An exception occurred while trying to close the input stream that was used to read admin-sidebar.xml", ex);
         }
 
         // Load other admin-sidebar.xml files from the classpath
@@ -246,8 +248,8 @@ public class AdminConsole {
                                     in.close();
                                 }
                             }
-                            catch (Exception ignored) {
-                                // Ignore.
+                            catch (Exception ex) {
+                                Log.debug("An exception occurred while trying to close the input stream that was used to read admin-sidebar.xml", ex);
                             }
                         }
                     }

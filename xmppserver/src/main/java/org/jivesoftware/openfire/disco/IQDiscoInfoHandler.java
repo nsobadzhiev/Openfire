@@ -18,8 +18,9 @@ package org.jivesoftware.openfire.disco;
 
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
-import org.dom4j.Namespace;
 import org.dom4j.QName;
+import org.jivesoftware.openfire.handler.IQBlockingHandler;
+import org.jivesoftware.openfire.handler.IQPrivateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jivesoftware.admin.AdminConsole;
@@ -40,6 +41,7 @@ import org.jivesoftware.util.cache.CacheFactory;
 import org.jivesoftware.util.SystemProperty;
 import org.xmpp.forms.DataForm;
 import org.xmpp.forms.FormField;
+import org.xmpp.forms.FormField.Type;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.JID;
 import org.xmpp.packet.PacketError;
@@ -644,7 +646,15 @@ public class IQDiscoInfoHandler extends IQHandler implements ClusterEventListene
                 }
                 if (name == null || name.equals(XMPPServer.getInstance().getServerInfo().getXMPPDomain())) {
                     // Answer features of the server itself.
-                    return new HashSet<>(serverFeatures.keySet()).iterator();
+                    final Set<String> result = new HashSet<>(serverFeatures.keySet());
+
+                    if ( !XMPPServer.getInstance().isLocal( senderJID ) || !UserManager.getInstance().isRegisteredUser( senderJID ) ) {
+                        // Remove features not available to users from other servers or anonymous users.
+                        // TODO this should be determined dynamically.
+                        result.remove(IQPrivateHandler.NAMESPACE);
+                        result.remove(IQBlockingHandler.NAMESPACE);
+                    }
+                    return result.iterator();
                 }
                 else if (node != null) {
                     return XMPPServer.getInstance().getIQPEPHandler().getFeatures(name, node, senderJID);
@@ -689,22 +699,23 @@ public class IQDiscoInfoHandler extends IQHandler implements ClusterEventListene
                     // Unknown node
                     return false;
                 }
+
+                // True if it is an info request of the server, a registered user or an
+                // anonymous user. We now support disco of user's bare JIDs
+                if (name == null) {
+                    return true;
+                }
+                if (SessionManager.getInstance().isAnonymousRoute(name)) {
+                    return true;
+                }
                 try {
-                    // True if it is an info request of the server, a registered user or an
-                    // anonymous user. We now support disco of user's bare JIDs
-                    if (name == null) return true;
-                    if (UserManager.getInstance().getUser(name) != null ||
-                            SessionManager.getInstance().isAnonymousRoute(name)) {
-                        if (node == null) {
-                            return true;
-                        }
-                        return XMPPServer.getInstance().getIQPEPHandler().hasInfo(name, node, senderJID);
+                    if ( UserManager.getInstance().getUser(name) != null ) {
+                        return true;
                     }
+                } catch (UserNotFoundException e) {
                     return false;
                 }
-                catch (UserNotFoundException e) {
-                    return false;
-                }
+                return false;
             }
 
             @Override
@@ -739,6 +750,7 @@ public class IQDiscoInfoHandler extends IQHandler implements ClusterEventListene
 
                         final FormField fieldAdminAddresses = dataForm.addField();
                         fieldAdminAddresses.setVariable("admin-addresses");
+                        fieldAdminAddresses.setType(Type.list_multi);
 
                         final UserManager userManager = UserManager.getInstance();
                         for ( final JID admin : admins )
