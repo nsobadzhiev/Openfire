@@ -70,10 +70,18 @@ Other folders are:
 * `Openfire/plugins` - Maven configuration files to allow the various [plugins](https://www.igniterealtime.org/projects/openfire/plugins.jsp) available to be built
 * `Openfire/starter` - a small module that allows Openfire to start in a consistent manner on different platforms
 
+#### Docker build
 To build the complete project including plugins, run the command (only docker build supported).
 ```
 DOCKER_BUILDKIT=1 docker build --ssh default --secret id=aws,src=$HOME/.aws/credentials .
 ```
+#### Docker compose build
+In order to execute locally the docker compose file will bring up the whole infrastructure.
+To achieve this run the following command instead of the docker build.
+```
+COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build --ssh default
+```
+
 Executing this command will forward your local SSH key (via SSH agent) to the docker build.
 To make this work an SSH key pair has to be generated (default file name) and added to your GitHub account.
 ```
