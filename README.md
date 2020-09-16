@@ -75,15 +75,11 @@ To build the complete project including plugins, run the command (only docker bu
 ```
 DOCKER_BUILDKIT=1 docker build --ssh default --secret id=aws,src=$HOME/.aws/credentials .
 ```
-#### Docker compose build
-In order to execute locally the docker compose file will bring up the whole infrastructure.
-To achieve this run the following command instead of the docker build.
-```
-COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build --ssh default
-```
+Executing this command will forward your local SSH key (via SSH agent) and your AWS credentials to the docker build.
 
-Executing this command will forward your local SSH key (via SSH agent) to the docker build.
-To make this work an SSH key pair has to be generated (default file name) and added to your GitHub account.
+##### Prerequisites
+To forward your SSH key pair it has to be generated (default file name) and added to your GitHub account.
+If no key pair has been created so far run following command:
 ```
 ssh-keygen -t rsa -b 4096 -C "you@example.com"
 ```
@@ -100,6 +96,27 @@ Add your private key to the SSH Agent:
 ```
 ssh-add -K ~/.ssh/id_rsa
 ```
+
+Your AWS credentials have to be configured.
+
+#### Docker local build
+To bring up a local MySQL database run:
+```
+docker-compose -f infra.yml up
+```
+
+To build a docker image that contains all plugins and can be locally tested all plugins and this project have to be
+contained in the same folder on your disk.
+Run the following command to create a docker image with remote debugging support:
+```
+DOCKER_BUILDKIT=1 docker build -t openfire:latest --secret id=aws,src=$HOME/.aws/credentials -f Openfire/Dockerfile_local .
+```
+
+To start the container run:
+```
+docker run --env DB_USER=openfire --env DB_PASS=testpass --env DB_URL=host.docker.internal --env DB_NAME=openfire --env AWS_REGION=eu-central-1 -p 5005:5005 --name openfire openfire:latest
+```
+The JVM will suspend until a debugger has connected.
 
 Testing your changes
 --------------------
@@ -124,6 +141,13 @@ Testing your changes
 3. apply
 
 You need to execute `mvnw verify` before you can launch openfire.
+
+##### Docker container
+1. Run -> Edit Configurations... -> Add Remote
+2. fill in following values
+    1. Host: Openfire
+    2. Port: 5005
+3. apply
 
 #### Other IDE's:
 
