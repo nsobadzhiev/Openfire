@@ -8,21 +8,12 @@ services:
             - db-data:/var/lib/mysql
         restart: always
         environment:
-            MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+            MYSQL_ROOT_PASSWORD: admin
             MYSQL_DATABASE: openfire
             MYSQL_USER: openfire
             MYSQL_PASSWORD: testpass
-        secrets:
-            - db_root_password
-            - db_password
         ports:
             - "3306:3306"
-
-secrets:
-    db_password:
-        file: ./db_password.txt
-    db_root_password:
-        file: ./db_root_password.txt
 
 volumes:
     db-data:
