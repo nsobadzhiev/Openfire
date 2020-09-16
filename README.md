@@ -105,18 +105,35 @@ To bring up a local MySQL database run:
 docker-compose -f infra.yml up
 ```
 
-To build a docker image that contains all plugins and can be locally tested all plugins and this project have to be
-contained in the same folder on your disk.
+To build a docker image that contains all plugins and can be locally tested **all plugins and this project have to be
+contained in the same folder on your disk.**
 Run the following command to create a docker image with remote debugging support:
 ```
 DOCKER_BUILDKIT=1 docker build -t openfire:latest --secret id=aws,src=$HOME/.aws/credentials -f Openfire/Dockerfile_local .
 ```
 
-To start the container run:
+If a new plugin needs to be added it has to be added to **Dockerfile_local**.
+First the plugin folder needs to be copied to the **packager** image.
 ```
-docker run --env DB_USER=openfire --env DB_PASS=testpass --env DB_URL=host.docker.internal --env DB_NAME=openfire --env AWS_REGION=eu-central-1 -p 5005:5005 --name openfire openfire:latest
+COPY ./<plugin_name> ./plugins/<plugin_name>
 ```
-The JVM will suspend until a debugger has connected.
+This will include it in the Maven build.
+The resulting JAR of that plugin has to be copied from the packager image to the final image.
+Find this line and replace the comment with the resulting JAR. 
+```
+COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload-0.0.1-SNAPSHOT.jar \
+    /usr/src/plugins/openfire-voice-plugin/target/voice-0.0.11-SNAPSHOT.jar \
+    /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
+    # add new plugins here
+    /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-2.4.2-SNAPSHOT.jar ./plugins/
+```
+
+To create the container run this command:
+```
+docker run --env DB_USER=openfire --env DB_PASS=testpass --env DB_URL=host.docker.internal --env DB_NAME=openfire --env AWS_REGION=eu-central-1 -p 5005:5005 -p 3478:3478 -p 3479:3479 -p 5222:5222 -p 5223:5223 -p 5229:5229 -p 5275:5276 -p 5276:5276 -p 5262:5262 -p 5263:5263 -p 5701:5701 -p 7070:7070 -p 7443:7443 -p 7777:7777 -p 9090:9090 -p 9091:9091 --name openfire openfire:latest
+```
+The JVM will suspend until a remote debugger has connected.
+Then just connect with a remote debugger of your choice to localhost:5005.
 
 Testing your changes
 --------------------
@@ -148,6 +165,9 @@ You need to execute `mvnw verify` before you can launch openfire.
     1. Host: Openfire
     2. Port: 5005
 3. apply
+
+In order to test plugins it is necessary to add them in IntelliJ via *File -> New -> Module from Existing Sources...*
+If this is done it is possible to set breakpoints. 
 
 #### Other IDE's:
 

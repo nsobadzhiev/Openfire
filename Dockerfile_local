@@ -32,6 +32,7 @@ COPY ./openfire-apns ./plugins/openfire-apns
 COPY ./openfire-voice-plugin ./plugins/openfire-voice-plugin
 COPY ./openfire-avatar-upload-plugin ./plugins/openfire-avatar-upload-plugin
 COPY ./openfire-hazelcast-plugin ./plugins/openfire-hazelcast-plugin
+# add new plugins here
 
 RUN mvn dependency:go-offline
 
@@ -58,6 +59,7 @@ COPY --from=aws /usr/local/openfire/authKey.p8 .
 COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload-0.0.1-SNAPSHOT.jar \
     /usr/src/plugins/openfire-voice-plugin/target/voice-0.0.11-SNAPSHOT.jar \
     /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
+    # add new plugins here
     /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-2.4.2-SNAPSHOT.jar ./plugins/
 
 ENV OPENFIRE_USER=openfire \
