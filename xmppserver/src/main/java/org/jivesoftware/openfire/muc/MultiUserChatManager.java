@@ -869,18 +869,20 @@ public class MultiUserChatManager extends BasicModule implements ClusterEventLis
 
     @Override
     public void leftCluster(byte[] nodeID) {
-        // Remove all room occupants linked to the defunct node as their sessions are cleaned out earlier
-        Log.debug("Removing orphaned occupants associated with defunct node: " +  new String(nodeID, StandardCharsets.UTF_8));
-
-        for (MultiUserChatService service : getMultiUserChatServices()) {
-            for (MUCRoom mucRoom : service.getChatRooms()) {
-                for (MUCRole mucRole : mucRoom.getOccupants()) {
-                    if (mucRole.getNodeID().equals(nodeID)) {
-                        mucRoom.leaveRoom(mucRole);
-                    }
-                }
-            }
-        }
+        // Even though it's against the standard, don't remove participants from the group if
+        // they disconnect
+//        // Remove all room occupants linked to the defunct node as their sessions are cleaned out earlier
+//        Log.debug("Removing orphaned occupants associated with defunct node: " +  new String(nodeID, StandardCharsets.UTF_8));
+//
+//        for (MultiUserChatService service : getMultiUserChatServices()) {
+//            for (MUCRoom mucRoom : service.getChatRooms()) {
+//                for (MUCRole mucRole : mucRoom.getOccupants()) {
+//                    if (mucRole.getNodeID().equals(nodeID)) {
+//                        mucRoom.leaveRoom(mucRole);
+//                    }
+//                }
+//            }
+//        }
     }
 
     @Override
