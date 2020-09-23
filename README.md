@@ -73,7 +73,7 @@ Other folders are:
 #### Docker build
 To build the complete project including plugins, run the command (only docker build supported).
 ```
-DOCKER_BUILDKIT=1 docker build --ssh default --secret id=aws,src=$HOME/.aws/credentials .
+DOCKER_BUILDKIT=1 docker build --ssh default --secret id=aws,src=$HOME/.aws/credentials --build-arg KEYSTORE_PWD=changeit .
 ```
 Executing this command will forward your local SSH key (via SSH agent) and your AWS credentials to the docker build.
 

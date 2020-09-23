@@ -3,14 +3,18 @@ FROM amazon/aws-cli as aws
 # download push notification credentials from S3
 RUN --mount=type=secret,id=aws,target=/root/.aws/credentials aws s3 cp s3://com.feinfone.build/apns/apns_key.p8 /usr/local/openfire/authKey.p8
 
-# TODO probably pass build arguments with docker-compose
+# Maven target to get all dependencies
+FROM maven:3.6.2-jdk-11 as packager
+
+# TODO define values via command
+# define the build arguments
 ARG VERSION_DBACCESS=1.2.2
 ARG VERSION_REGISTRATION=1.7.2
 ARG VERSION_RESTAPI=1.4.0
 ARG VERSION_SUBSCRIPTION=1.4.0
 
-# Maven target to get all dependencies
-FROM maven:3.6.2-jdk-11 as packager
+ARG KEYSTORE_PWD
+
 WORKDIR /usr/src
 
 COPY ./pom.xml .
@@ -22,6 +26,30 @@ COPY ./plugins/pom.xml ./plugins/
 COPY ./plugins/openfire-plugin-assembly-descriptor/pom.xml ./plugins/openfire-plugin-assembly-descriptor/
 COPY ./distribution/pom.xml ./distribution/
 
+WORKDIR ca
+# create self signed certificate and add it to a PKCS12 keystore
+RUN keytool -genkeypair \
+        -keystore keystore.p12 \
+        -deststoretype pkcs12 \
+        -dname "CN=feinfone.com" \
+        -keypass ${KEYSTORE_PWD} \
+        -storepass ${KEYSTORE_PWD} \
+        -keyalg RSA \
+        -validity 365 \
+        -keysize 4096 \
+        -alias feinfone.com \
+        # multi domain certificate part
+        -ext SAN=dns:feinfone.com,dns:search.feinfone.com,dns:proxy.feinfone.com,dns:pubsub.feinfone.com,dns:conference.feinfone.com \
+    # to add another certificate to the same keystore just copy paste the previous command again with a different alias
+    # Convert PKCS12 keystore to a JKS keystore which Openfire understands
+    && keytool -importkeystore \
+               -srckeystore keystore.p12 \
+               -srcstoretype PKCS12 \
+               -srcstorepass ${KEYSTORE_PWD} \
+               -destkeystore keystore \
+               -deststorepass ${KEYSTORE_PWD}
+
+WORKDIR /usr/src
 # get all necessary plugins
 # 1. official plugins
 # DB Access (Official Openfire plugin)
@@ -65,6 +93,9 @@ COPY build/docker/inject_db_settings.sh \
 
 # copy push notification credentials
 COPY --from=aws /usr/local/openfire/authKey.p8 .
+# copy self signed certificate
+COPY --from=packager /usr/src/ca/chat_server.crt ./resources/security/keystore
+# COPY --from=packager /usr/src/ca/chat_priv.key /usr/local/openfire/resources/security/keystore
 
 # (move all plugin JARs to the plugin folder)
 COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload-0.0.1-SNAPSHOT.jar \
