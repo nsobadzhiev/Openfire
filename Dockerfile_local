@@ -61,7 +61,7 @@ RUN wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_DBAC
 # REST API
  && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_RESTAPI}/restAPI.jar -O ./plugins/restAPI.jar \
 # Subscription
- && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_SUBSCRIPTION}/subscription.jar -O ./plugins/subscription.jar \
+ && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_SUBSCRIPTION}/subscription.jar -O ./plugins/subscription.jar
 
 # 2. take all plugins developed by us from the parent directory
 COPY ./openfire-apns ./plugins/openfire-apns
