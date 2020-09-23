@@ -14,7 +14,6 @@ ARG VERSION_DBACCESS=1.2.2
 ARG VERSION_REGISTRATION=1.7.2
 ARG VERSION_RESTAPI=1.4.0
 ARG VERSION_SUBSCRIPTION=1.4.0
-ARG VERSION_JUSTMARRIED=1.2.2
 
 ARG KEYSTORE_PWD=testpass
 
@@ -42,7 +41,7 @@ RUN keytool -genkeypair \
         -keysize 4096 \
         -alias feinfone.com \
         # multi domain certificate part
-        -ext SAN=dns:feinfone.com,dns:search.feinfone.com,dns:proxy.feinfone.com,dns:pubsub.feinfone.com,dns:conference.feinfone.com \
+        -ext SAN=dns:feinfone.com,dns:search.feinfone.com,dns:proxy.feinfone.com,dns:pubsub.feinfone.com,dns:conference.feinfone.com,dns:group-chat.feinfone.com \
     # to add another certificate to the same keystore just copy paste the previous command again with a different alias
     # Convert PKCS12 keystore to a JKS keystore which Openfire understands
     && keytool -importkeystore \
@@ -63,8 +62,6 @@ RUN wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_DBAC
  && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_RESTAPI}/restAPI.jar -O ./plugins/restAPI.jar \
 # Subscription
  && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_SUBSCRIPTION}/subscription.jar -O ./plugins/subscription.jar \
-# Just married
- && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_JUSTMARRIED}/justmarried.jar -O ./plugins/justmarried.jar
 
 # 2. take all plugins developed by us from the parent directory
 COPY ./openfire-apns ./plugins/openfire-apns
@@ -94,7 +91,7 @@ COPY Openfire/build/docker/inject_db_settings.sh \
 # copy push notification credentials
 COPY --from=aws /usr/local/openfire/authKey.p8 .
 
-# copy self signed certificate
+# copy keystore with self signed certificate
 COPY --from=packager /usr/src/ca/keystore ./resources/security/
 
 # (move all plugin JARs to the plugin folder)

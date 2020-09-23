@@ -39,7 +39,7 @@ RUN keytool -genkeypair \
         -keysize 4096 \
         -alias feinfone.com \
         # multi domain certificate part
-        -ext SAN=dns:feinfone.com,dns:search.feinfone.com,dns:proxy.feinfone.com,dns:pubsub.feinfone.com,dns:conference.feinfone.com \
+        -ext SAN=dns:feinfone.com,dns:search.feinfone.com,dns:proxy.feinfone.com,dns:pubsub.feinfone.com,dns:conference.feinfone.com,dns:group-chat.feinfone.com \
     # to add another certificate to the same keystore just copy paste the previous command again with a different alias
     # Convert PKCS12 keystore to a JKS keystore which Openfire understands
     && keytool -importkeystore \
@@ -93,9 +93,9 @@ COPY build/docker/inject_db_settings.sh \
 
 # copy push notification credentials
 COPY --from=aws /usr/local/openfire/authKey.p8 .
-# copy self signed certificate
-COPY --from=packager /usr/src/ca/chat_server.crt ./resources/security/keystore
-# COPY --from=packager /usr/src/ca/chat_priv.key /usr/local/openfire/resources/security/keystore
+
+# copy keystore with self signed certificate
+COPY --from=packager /usr/src/ca/keystore ./resources/security/
 
 # (move all plugin JARs to the plugin folder)
 COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload-0.0.1-SNAPSHOT.jar \
