@@ -26,7 +26,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
+import org.dom4j.QName;
 import org.jivesoftware.database.SequenceManager;
 import org.jivesoftware.openfire.PacketRouter;
 import org.jivesoftware.openfire.XMPPServer;
@@ -78,12 +81,7 @@ import org.jivesoftware.util.cache.CacheFactory;
 import org.jivesoftware.util.cache.ExternalizableUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xmpp.packet.IQ;
-import org.xmpp.packet.JID;
-import org.xmpp.packet.Message;
-import org.xmpp.packet.Packet;
-import org.xmpp.packet.PacketError;
-import org.xmpp.packet.Presence;
+import org.xmpp.packet.*;
 
 /**
  * Implementation of a chatroom that is being hosted by this JVM. A LocalMUCRoom could represent
@@ -1061,6 +1059,9 @@ public class LocalMUCRoom implements MUCRoom, GroupEventListener {
         }
         // Send the message to all occupants
         message.setFrom(senderRole.getRoleAddress());
+        if (canAnyoneDiscoverJID) {
+            addRealJidToMessage(message, senderRole);
+        }
         send(message);
         // Fire event that message was received by the room
         MUCEventDispatcher.messageReceived(getRole().getRoleAddress(), senderRole.getUserAddress(),
@@ -1278,6 +1279,21 @@ public class LocalMUCRoom implements MUCRoom, GroupEventListener {
             mucService.logConversation(this, message, senderAddress);
         }
         mucService.messageBroadcastedTo(messageRequest.getOccupants());
+    }
+
+    /**
+     * Based on XEP-0045, section 7.2.13:
+     * If the room is non-anonymous, the service MAY include an
+     * Extended Stanza Addressing (XEP-0033) [16] element that notes the original
+     * full JID of the sender by means of the "ofrom" address type
+     */
+    @VisibleForTesting
+    public void addRealJidToMessage(Message message, MUCRole role) {
+        Element addresses = DocumentHelper.createElement(QName.get("addresses", "http://jabber.org/protocol/address"));
+        Element address = addresses.addElement("address");
+        address.addAttribute("type", "ofrom");
+        address.addAttribute("jid", role.getUserAddress().toBareJID());
+        message.addExtension(new PacketExtension(addresses));
     }
 
     /**
