@@ -3,9 +3,6 @@ FROM amazon/aws-cli as aws
 # download push notification credentials from S3
 RUN --mount=type=secret,id=aws,target=/root/.aws/credentials aws s3 cp s3://com.feinfone.build/apns/apns_key.p8 /usr/local/openfire/authKey.p8
 
-#ARG KEYSTORE_PASS=testpass
-#ARG KEYSTORE_ALIAS="feinfone.com"
-
 # Maven target to get all dependencies and build
 FROM maven:3.6.2-jdk-11 as packager
 
@@ -95,11 +92,11 @@ COPY --from=aws /usr/local/openfire/authKey.p8 .
 COPY --from=packager /usr/src/ca/keystore ./resources/security/
 
 # (move all plugin JARs to the plugin folder)
-COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload-0.0.1-SNAPSHOT.jar \
-    /usr/src/plugins/openfire-voice-plugin/target/voice-0.1.0-SNAPSHOT.jar \
+COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
+    /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
     /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
     # add new plugins here
-    /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-2.4.2-SNAPSHOT.jar ./plugins/
+    /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-openfire-plugin-assembly.jar ./plugins/
 
 ENV OPENFIRE_USER=openfire \
     OPENFIRE_DIR=/usr/local/openfire \

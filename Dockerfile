@@ -98,10 +98,10 @@ COPY --from=aws /usr/local/openfire/authKey.p8 .
 COPY --from=packager /usr/src/ca/keystore ./resources/security/
 
 # (move all plugin JARs to the plugin folder)
-COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload-0.0.1-SNAPSHOT.jar \
-     /usr/src/plugins/openfire-voice-plugin/target/voice-0.1.0-SNAPSHOT.jar \
+COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
+     /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
      /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
-     /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-2.4.2-SNAPSHOT.jar \
+     /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-openfire-plugin-assembly.jar \
      ./plugins/
 
 ENV OPENFIRE_USER=openfire \
