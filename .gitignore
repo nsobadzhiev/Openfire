@@ -31,3 +31,6 @@ rpmbuild/
 debian/
 
 .gradle
+
+# log files
+*.log
