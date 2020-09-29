@@ -74,6 +74,7 @@ if [[ -z ${1} ]]; then
         -DopenfireHome="${OPENFIRE_DIR}" \
         -Dopenfire.lib.dir=${OPENFIRE_DIR}/lib \
         -Dlog4j.configurationFile=${OPENFIRE_DIR}/lib/log4j2.xml \
+        -Djavax.net.ssl.trustStore=${OPENFIRE_DIR}/resources/security/truststore \
         -classpath ${OPENFIRE_DIR}/lib/startup.jar \
         -jar ${OPENFIRE_DIR}/lib/startup.jar ${EXTRA_ARGS}
 else

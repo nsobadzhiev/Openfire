@@ -27,27 +27,13 @@ COPY ./plugins/openfire-plugin-assembly-descriptor/pom.xml ./plugins/openfire-pl
 COPY ./distribution/pom.xml ./distribution/
 
 WORKDIR ca
-# create self signed certificate and add it to a PKCS12 keystore
-RUN keytool -genkeypair \
-        -keystore keystore.p12 \
-        -deststoretype pkcs12 \
-        -dname "CN=feinfone.com" \
-        -keypass ${KEYSTORE_PWD} \
-        -storepass ${KEYSTORE_PWD} \
-        -keyalg RSA \
-        -validity 365 \
-        -keysize 4096 \
-        -alias feinfone.com \
-        # multi domain certificate part
-        -ext SAN=dns:feinfone.com,dns:search.feinfone.com,dns:proxy.feinfone.com,dns:pubsub.feinfone.com,dns:conference.feinfone.com,dns:group-chat.feinfone.com \
-    # to add another certificate to the same keystore just copy paste the previous command again with a different alias
-    # Convert PKCS12 keystore to a JKS keystore which Openfire understands
-    && keytool -importkeystore \
-               -srckeystore keystore.p12 \
-               -srcstoretype PKCS12 \
-               -srcstorepass ${KEYSTORE_PWD} \
-               -destkeystore keystore \
-               -deststorepass ${KEYSTORE_PWD}
+# generate a new RSA key and self sign it to create the certificate (-nodes makes the key not password protected)
+# if the whole organization information is set ('/C=DE/ST=Berlin/L=Berlin/O=VoiceUp/OU=VoiceUp Security/CN=feinfone.com') Openfire understands this as a pending signing request
+RUN bash -c "openssl req -x509 -newkey rsa:4096 -keyout feinfone.key.pem -out feinfone.cert.pem -days 365 -subj '/CN=feinfone.com' -nodes -extensions san -config <(echo '[req]'; echo 'distinguished_name=req'; echo '[san]'; echo 'subjectAltName=DNS:feinfone.com,DNS:*.feinfone.com')" \
+    # create a PKCS12 keystore (name is the alias of the private key entry in the store)
+    && openssl pkcs12 -export -in feinfone.cert.pem -inkey feinfone.key.pem -out keystore.p12 -name "feinfone.com" -password pass:$KEYSTORE_PWD \
+    # convert PKCS12 keystore to JKS keystore
+    && keytool -importkeystore -destkeystore keystore -deststorepass $KEYSTORE_PWD -srckeystore keystore.p12 -srcstoretype PKCS12 -srcstorepass $KEYSTORE_PWD
 
 WORKDIR /usr/src
 # get all necessary plugins
