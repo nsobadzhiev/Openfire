@@ -87,8 +87,9 @@ COPY --from=packager /usr/src/ca/keystore ./resources/security/
 COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
      /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
      /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
-     /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-openfire-plugin-assembly.jar \
      ./plugins/
+
+COPY --from=packager /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-openfire-plugin-assembly.jar ./plugins/hazelcast.jar
 
 ENV OPENFIRE_USER=openfire \
     OPENFIRE_DIR=/usr/local/openfire \

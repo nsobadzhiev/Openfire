@@ -81,14 +81,16 @@ COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avata
     /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
     /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
     # add new plugins here
-    /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-openfire-plugin-assembly.jar ./plugins/
+    ./plugins/
+
+COPY --from=packager /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-openfire-plugin-assembly.jar ./plugins/hazelcast.jar
 
 ENV OPENFIRE_USER=openfire \
     OPENFIRE_DIR=/usr/local/openfire \
     OPENFIRE_DATA_DIR=/var/lib/openfire \
     OPENFIRE_LOG_DIR=/var/log/openfire
 
-RUN apt-get update -qq --allow-releaseinfo-change \
+RUN apt-get update -qq \
     && apt-get install -yqq sudo \
     && adduser --disabled-password --quiet --system --home $OPENFIRE_DATA_DIR --gecos "Openfire XMPP server" --group openfire \
     && chmod 755 /sbin/entrypoint.sh \

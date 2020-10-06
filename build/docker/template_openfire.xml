@@ -62,6 +62,9 @@
         </defaultProvider>
         <mysql>
             <useUnicode>true</useUnicode>
-        </mysql>>
+        </mysql>
     </database>
+    <clustering>
+        <enabled>true</enabled>
+    </clustering>
 </jive>
