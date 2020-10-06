@@ -73,9 +73,13 @@ Other folders are:
 #### Docker build
 To build the complete project including plugins, run the command (only docker build supported).
 ```
-DOCKER_BUILDKIT=1 docker build --ssh default --secret id=aws,src=$HOME/.aws/credentials --build-arg KEYSTORE_PWD=changeit .
+docker buildx build --ssh default --secret id=aws,src=$HOME/.aws/credentials --build-arg KEYSTORE_PWD=changeit .
 ```
 Executing this command will forward your local SSH key (via SSH agent) and your AWS credentials to the docker build.
+Alternatively you can you this command to tag your image when building it whit this command:
+```
+docker buildx build --ssh default --secret id=aws,src=$HOME/.aws/credentials --build-arg KEYSTORE_PWD=changeit -t 556016385979.dkr.ecr.eu-central-1.amazonaws.com/feinfone:<image-version> .
+``` 
 
 ##### Prerequisites
 To forward your SSH key pair it has to be generated (default file name) and added to your GitHub account.
