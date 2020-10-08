@@ -542,10 +542,8 @@ public class LocalMUCUser implements MUCUser {
                         try {
                             // TODO Consider that different nodes can be creating and processing this presence at the same time (when remote node went down)
                             role.setPresence(packet);
-                            // Even though it's against the standard, don't remove participants from the group if
-                            // they disconnect
-//                            removeRole(group);
-//                            role.getChatRoom().leaveRoom(role);
+                            removeRole(group);
+                            role.getChatRoom().leaveRoom(role);
                         }
                         catch (Exception e) {
                             Log.error(e.getMessage(), e);
