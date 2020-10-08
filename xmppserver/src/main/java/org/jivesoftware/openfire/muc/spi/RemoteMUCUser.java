@@ -66,12 +66,10 @@ public class RemoteMUCUser implements MUCUser {
 
     private void process(Presence presence) {
         if (presence.getType() == Presence.Type.unavailable) {
-            // Even though it's against the standard, don't remove participants from the group if
-            // they disconnect
-//            MUCRole mucRole = room.getOccupantByFullJID(realjid);
-//            if (mucRole != null) {
-//                room.leaveRoom(mucRole);
-//            }
+            MUCRole mucRole = room.getOccupantByFullJID(realjid);
+            if (mucRole != null) {
+                room.leaveRoom(mucRole);
+            }
         }
         else {
             throw new UnsupportedOperationException("Cannot process Presence packets of remote users: " + presence);
