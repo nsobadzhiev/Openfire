@@ -1,7 +1,9 @@
 # syntax = docker/dockerfile:1.0-experimental
 FROM amazon/aws-cli as aws
-# download push notification credentials from S3
-RUN --mount=type=secret,id=aws,target=/root/.aws/credentials aws s3 cp s3://com.feinfone.build/apns/apns_key.p8 /usr/local/openfire/authKey.p8
+# download push notification credentials from S3, the servers private key and the signed certificate
+RUN --mount=type=secret,id=aws,target=/root/.aws/credentials aws s3 cp s3://com.feinfone.build/apns/apns_key.p8 /usr/local/openfire/authKey.p8 \
+    && aws s3 cp s3://com.feinfone.build/cert/feinfone.key /usr/local/openfire/feinfone.key \
+    && aws s3 cp s3://com.feinfone.build/cert/feinfone_ca.crt /usr/local/openfire/feinfone_ca.crt
 
 # Maven target to get all dependencies and build
 FROM maven:3.6.2-jdk-11 as packager
@@ -25,12 +27,12 @@ COPY Openfire/plugins/openfire-plugin-assembly-descriptor/pom.xml ./plugins/open
 COPY Openfire/distribution/pom.xml ./distribution/
 
 WORKDIR ca
-# generate a new RSA key and self sign it to create the certificate (-nodes makes the key not password protected)
-# if the whole organization information is set ('/C=DE/ST=Berlin/L=Berlin/O=VoiceUp/OU=VoiceUp Security/CN=feinfone.com') Openfire understands this as a pending signing request
-RUN bash -c "openssl req -x509 -newkey rsa:4096 -keyout feinfone.key.pem -out feinfone.cert.pem -days 365 -subj '/CN=feinfone.com' -nodes -extensions san -config <(echo '[req]'; echo 'distinguished_name=req'; echo '[san]'; echo 'subjectAltName=DNS:feinfone.com,DNS:*.feinfone.com')" \
-    # create a PKCS12 keystore (name is the alias of the private key entry in the store)
-    && openssl pkcs12 -export -in feinfone.cert.pem -inkey feinfone.key.pem -out keystore.p12 -name "feinfone.com" -password pass:$KEYSTORE_PWD \
-    # convert PKCS12 keystore to JKS keystore
+# copy the certificate from aws build stage and create a keystore with it
+COPY --from=aws /usr/local/openfire/feinfone.key \
+     /usr/local/openfire/feinfone_ca.crt \
+     ./
+
+RUN openssl pkcs12 -export -in feinfone_ca.crt -inkey feinfone.key -out keystore.p12 -name "feinfone.com" -password pass:$KEYSTORE_PWD \
     && keytool -importkeystore -destkeystore keystore -deststorepass $KEYSTORE_PWD -srckeystore keystore.p12 -srcstoretype PKCS12 -srcstorepass $KEYSTORE_PWD
 
 WORKDIR /usr/src
