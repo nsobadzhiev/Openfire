@@ -42,8 +42,6 @@ WORKDIR /usr/src
 # 1. official plugins
 # DB Access (Official Openfire plugin)
 RUN wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_DBACCESS}/dbaccess.jar -O ./plugins/dbaccess.jar \
-# Registration (Official Openfire plugin)
- && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_REGISTRATION}/registration.jar -O ./plugins/registration.jar \
 # REST API (Official Openfire plugin)
  && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_RESTAPI}/restAPI.jar -O ./plugins/restAPI.jar \
 # Subscription (Official Openfire plugin)
@@ -60,6 +58,8 @@ RUN --mount=type=ssh git clone git@github.com:voiceup-chat/openfire-avatar-uploa
  && git clone git@github.com:voiceup-chat/openfire-apns.git ./plugins/openfire-apns \
 # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
  && git clone git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin
+# [Feinfone Registration](https://github.com/nsobadzhiev/openfire-registration-plugin)
+ && git clone git@github.com:nsobadzhiev/openfire-registration-plugin.git ./plugins/openfire-registration-plugin
 
 RUN mvn dependency:go-offline
 
