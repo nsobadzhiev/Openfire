@@ -107,10 +107,11 @@ docker-compose -f infra.yml up
 
 To build a docker image that contains all plugins and can be locally tested **all plugins and this project have to be
 contained in the same folder on your disk.**
-Run the following command to create a docker image with remote debugging support:
+Run the following command in the parent directory of this project and replace `<project_folder>` with the name of the folder this project has been cloned to.
 ```
-DOCKER_BUILDKIT=1 docker build -t openfire:latest --secret id=aws,src=$HOME/.aws/credentials -f Openfire/Dockerfile_local .
+DOCKER_BUILDKIT=1 docker build -t openfire:latest --secret id=aws,src=$HOME/.aws/credentials -f <poject_folder>/Dockerfile_local --build-arg PROJECT_FOLDER=<project_folder> .
 ```
+This will create a docker image with remote debugging support on port 5005 suspending the JVM until a debugger connected.
 
 If a new plugin needs to be added it has to be added to **Dockerfile_local**.
 First the plugin folder needs to be copied to the **packager** image.
