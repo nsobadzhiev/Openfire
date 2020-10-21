@@ -57,7 +57,7 @@ RUN --mount=type=ssh git clone git@github.com:voiceup-chat/openfire-avatar-uploa
 # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
  && git clone git@github.com:voiceup-chat/openfire-apns.git ./plugins/openfire-apns \
 # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
- && git clone git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin
+ && git clone git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin \
 # [Feinfone Registration](https://github.com/nsobadzhiev/openfire-registration-plugin)
  && git clone git@github.com:nsobadzhiev/openfire-registration-plugin.git ./plugins/openfire-registration-plugin
 
