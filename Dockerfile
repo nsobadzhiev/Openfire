@@ -11,7 +11,6 @@ FROM maven:3.6.2-jdk-11 as packager
 # TODO define values via command
 # define the build arguments
 ARG VERSION_DBACCESS=1.2.2
-ARG VERSION_REGISTRATION=1.7.2
 ARG VERSION_RESTAPI=1.4.0
 ARG VERSION_SUBSCRIPTION=1.4.0
 
@@ -57,9 +56,7 @@ RUN --mount=type=ssh git clone git@github.com:voiceup-chat/openfire-avatar-uploa
 # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
  && git clone git@github.com:voiceup-chat/openfire-apns.git ./plugins/openfire-apns \
 # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
- && git clone git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin \
-# [Feinfone Registration](https://github.com/nsobadzhiev/openfire-registration-plugin)
- && git clone git@github.com:nsobadzhiev/openfire-registration-plugin.git ./plugins/openfire-registration-plugin
+ && git clone git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin
 
 RUN mvn dependency:go-offline
 
