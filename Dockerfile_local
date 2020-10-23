@@ -11,7 +11,6 @@ FROM maven:3.6.2-jdk-11 as packager
 ARG PROJECT_FOLDER=Openfire
 
 ARG VERSION_DBACCESS=1.2.2
-ARG VERSION_REGISTRATION=1.7.2
 ARG VERSION_RESTAPI=1.4.0
 ARG VERSION_SUBSCRIPTION=1.4.0
 
@@ -52,7 +51,6 @@ COPY ./openfire-apns ./plugins/openfire-apns
 COPY ./openfire-voice-plugin ./plugins/openfire-voice-plugin
 COPY ./openfire-avatar-upload-plugin ./plugins/openfire-avatar-upload-plugin
 COPY ./openfire-hazelcast-plugin ./plugins/openfire-hazelcast-plugin
-COPY ./openfire-registration-plugin ./plugins/openfire-registration-plugin
 # add new plugins here
 
 RUN mvn dependency:go-offline
