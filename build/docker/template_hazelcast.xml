@@ -19,18 +19,8 @@
         </outbound-ports>
         <join>
             <multicast enabled="false"/>
-            <aws enabled="false"/>
-            <tcp-ip enabled="false" />
-            <discovery-strategies>
-                <discovery-strategy enabled="true" class="com.ikentoo.hazelcast.AwsEcsDiscoveryStrategy">
-                    <properties>
-                        <property name="cluster">_CLUSTER_NAME_</property>
-                        <property name="service">_SERVICE_NAME_</property>
-                        <property name="ports">5701-5702</property>
-                        <property name="fail-fast">true</property>
-                    </properties>
-                </discovery-strategy>
-            </discovery-strategies>
+            <aws enabled="true"/>
+            <tcp-ip enabled="false"/>
         </join>
         <interfaces enabled="true">
             <!-- this most likely corresponds to your vpc range -->

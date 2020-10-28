@@ -65,7 +65,7 @@ ARG PROJECT_FOLDER=Openfire
 
 WORKDIR /usr/local/openfire
 COPY --from=packager /usr/src/distribution/target/distribution-base .
-COPY --from=packager /usr/src/build/docker/entrypoint_local.sh /sbin/entrypoint.sh
+COPY --from=packager /usr/src/build/docker/entrypoint.sh /sbin/entrypoint.sh
 
 COPY $PROJECT_FOLDER/build/docker/inject_db_settings.sh \
      $PROJECT_FOLDER/build/docker/inject_hazelcast_settings.sh \
