@@ -19,7 +19,6 @@
         <join>
             <multicast enabled="false"/>
             <aws enabled="true">
-                <region>eu-central-1</region>
                 <connection-timeout-seconds>7</connection-timeout-seconds>
                 <read-timeout-seconds>7</read-timeout-seconds>
                 <connection-retries>4</connection-retries>
