@@ -71,9 +71,15 @@ Other folders are:
 * `Openfire/starter` - a small module that allows Openfire to start in a consistent manner on different platforms
 
 #### Docker build
-To build the complete project including plugins, run the command (only docker build supported).
+To build the complete project including plugins, run the command (only docker build supported)
+and replace the build argument `KEYSTORE_PWD` with the "Openfire keystore pass stage/prod" entry in our password database.
+It is important to use the same value since Openfire needs to know that password to access the keystore for secure communication.
+This password is persisted in the property store of Openfire which only changes when configured with the admin panel.
+
+The `IMG_TAG` build argument is optional and can be used to clone all plugins for a certain tag.
+If this argument has been set then this project should be checked out for the same tag.
 ```
-docker buildx build --ssh default --secret id=aws,src=$HOME/.aws/credentials --build-arg KEYSTORE_PWD=changeit .
+docker buildx build --ssh default --secret id=aws,src=$HOME/.aws/credentials --build-arg KEYSTORE_PWD=<get-from-pw-db> --build-arg IMG_TAG=<nr_tag> .
 ```
 Executing this command will forward your local SSH key (via SSH agent) and your AWS credentials to the docker build.
 
