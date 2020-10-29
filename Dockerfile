@@ -13,6 +13,7 @@ FROM maven:3.6.2-jdk-11 as packager
 ARG VERSION_DBACCESS=1.2.2
 ARG VERSION_RESTAPI=1.4.0
 ARG VERSION_SUBSCRIPTION=1.4.0
+ARG IMG_TAG
 
 ARG KEYSTORE_PWD
 
@@ -49,14 +50,26 @@ RUN wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_DBAC
 # 2. our plugins: clone private repository and use host machines SSH key
 # Download public key for github.com
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-# [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
-RUN --mount=type=ssh git clone git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git ./plugins/openfire-avatar-upload-plugin \
-# [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
- && git clone git@github.com:voiceup-chat/openfire-voice-plugin.git ./plugins/openfire-voice-plugin \
-# [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
- && git clone git@github.com:voiceup-chat/openfire-apns.git ./plugins/openfire-apns \
-# [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
- && git clone git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin
+
+RUN --mount=type=ssh if [ -z "$IMG_TAG" ] ; then \
+ # [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
+ git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git ./plugins/openfire-avatar-upload-plugin \
+ # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
+  && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git ./plugins/openfire-voice-plugin \
+ # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
+  && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git ./plugins/openfire-apns \
+ # [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
+  && git clone --depth 1 git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin; \
+  else \
+  # [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
+   git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git -b $IMG_TAG ./plugins/openfire-avatar-upload-plugin \
+  # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
+   && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git -b $IMG_TAG ./plugins/openfire-voice-plugin \
+  # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
+   && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git -b $IMG_TAG ./plugins/openfire-apns \
+  # [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
+   && git clone --depth 1 git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git -b $IMG_TAG ./plugins/openfire-hazelcast-plugin \
+  ; fi
 
 RUN mvn dependency:go-offline
 
@@ -83,10 +96,15 @@ COPY --from=aws /usr/local/openfire/authKey.p8 .
 COPY --from=packager /usr/src/ca/keystore ./resources/security/
 
 # (move all plugin JARs to the plugin folder)
-COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
-     /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
-     /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
-     ./plugins/
+COPY --from=packager \
+    /usr/src/plugins/dbaccess.jar \
+    /usr/src/plugins/restAPI.jar \
+    /usr/src/plugins/subscription.jar \
+    /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
+    /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
+    /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
+    # add new plugins here
+    ./plugins/
 
 COPY --from=packager /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-openfire-plugin-assembly.jar ./plugins/hazelcast.jar
 

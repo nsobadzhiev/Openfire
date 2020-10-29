@@ -81,7 +81,11 @@ COPY --from=aws /usr/local/openfire/authKey.p8 .
 COPY --from=packager /usr/src/ca/keystore ./resources/security/
 
 # (move all plugin JARs to the plugin folder)
-COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
+COPY --from=packager \
+    /usr/src/plugins/dbaccess.jar \
+    /usr/src/plugins/restAPI.jar \
+    /usr/src/plugins/subscription.jar \
+    /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
     /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
     /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
     # add new plugins here
