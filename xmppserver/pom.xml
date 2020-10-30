@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.igniterealtime.openfire</groupId>
         <artifactId>parent</artifactId>
-        <version>4.6.1-SNAPSHOT</version>
+        <version>4.6.0</version>
     </parent>
     <artifactId>xmppserver</artifactId>
     <name>Core XMPP Server</name>
@@ -49,7 +49,8 @@
                         <version>3.0.0-M3</version>
                         <configuration>
                             <systemPropertyVariables>
-                                <log4j.configurationFile>${project.build.directory}/test-classes/log4j2-test-mvn.xml</log4j.configurationFile>
+                                <log4j.configurationFile>${project.build.directory}/test-classes/log4j2-test-mvn.xml
+                                </log4j.configurationFile>
                             </systemPropertyVariables>
                             <argLine>@{argLine} -Duser.language=us -Duser.country=US</argLine>
                         </configuration>
@@ -124,7 +125,8 @@
                 <version>3.0.0-M3</version>
                 <configuration>
                     <systemPropertyVariables>
-                        <log4j.configurationFile>${project.build.directory}/test-classes/log4j2-test-mvn.xml</log4j.configurationFile>
+                        <log4j.configurationFile>${project.build.directory}/test-classes/log4j2-test-mvn.xml
+                        </log4j.configurationFile>
                     </systemPropertyVariables>
                     <argLine>-Duser.language=us -Duser.country=US</argLine>
                 </configuration>
