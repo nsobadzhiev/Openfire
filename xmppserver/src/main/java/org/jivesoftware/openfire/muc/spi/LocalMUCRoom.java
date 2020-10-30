@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
+import com.google.common.annotations.VisibleForTesting;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.dom4j.QName;
@@ -65,7 +65,6 @@ import org.jivesoftware.util.cache.ExternalizableUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmpp.packet.*;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -1654,6 +1653,7 @@ public class LocalMUCRoom implements MUCRoom, GroupEventListener {
      * Extended Stanza Addressing (XEP-0033) [16] element that notes the original
      * full JID of the sender by means of the "ofrom" address type
      */
+    @VisibleForTesting
     public void addRealJidToMessage(Message message, MUCRole role) {
         Element addresses = DocumentHelper.createElement(QName.get("addresses", "http://jabber.org/protocol/address"));
         Element address = addresses.addElement("address");

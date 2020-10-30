@@ -1,0 +1,22 @@
+version: "3.8"
+services:
+    db:
+        image: mysql:5.7
+        networks:
+            - inner
+        volumes:
+            - db-data:/var/lib/mysql
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: admin
+            MYSQL_DATABASE: openfire
+            MYSQL_USER: openfire
+            MYSQL_PASSWORD: testpass
+        ports:
+            - "3306:3306"
+
+volumes:
+    db-data:
+
+networks:
+    inner:

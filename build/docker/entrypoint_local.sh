@@ -68,6 +68,7 @@ JAVACMD=$(which java 2>/dev/null)
 # default behaviour is to launch openfire
 if [[ -z ${1} ]]; then
     exec start-stop-daemon --start --chuid ${OPENFIRE_USER}:${OPENFIRE_USER} --exec $JAVACMD -- \
+        -Xdebug -Xrunjdwp:transport=dt_socket,address=*:5005,server=y,suspend=y \
         -XX:MaxRAMPercentage=75 \
         -server \
         -DopenfireHome="${OPENFIRE_DIR}" \

@@ -1,32 +1,31 @@
-# syntax=docker/dockerfile:1.0.0-experimental
+# syntax = docker/dockerfile:1.0-experimental
 FROM amazon/aws-cli as aws
 # download push notification credentials from S3, the servers private key and the signed certificate
 RUN --mount=type=secret,id=aws,target=/root/.aws/credentials aws s3 cp s3://com.feinfone.build/apns/apns_key.p8 /usr/local/openfire/authKey.p8 \
     && aws s3 cp s3://com.feinfone.build/cert/feinfone.key /usr/local/openfire/feinfone.key \
     && aws s3 cp s3://com.feinfone.build/cert/feinfone_ca.crt /usr/local/openfire/feinfone_ca.crt
 
-# Maven target to get all dependencies
+# Maven target to get all dependencies and build
 FROM maven:3.6.2-jdk-11 as packager
+# build arguments
+ARG PROJECT_FOLDER=Openfire
 
-# TODO define values via command
-# define the build arguments
 ARG VERSION_DBACCESS=1.2.2
 ARG VERSION_RESTAPI=1.4.0
 ARG VERSION_SUBSCRIPTION=1.4.0
-ARG IMG_TAG
 
-ARG KEYSTORE_PWD
+ARG KEYSTORE_PWD=changeit
 
 WORKDIR /usr/src
 
-COPY ./pom.xml .
-COPY ./i18n/pom.xml ./i18n/
-COPY ./xmppserver/pom.xml ./xmppserver/
-COPY ./starter/pom.xml ./starter/
-COPY ./starter/libs/* ./starter/libs/
-COPY ./plugins/pom.xml ./plugins/
-COPY ./plugins/openfire-plugin-assembly-descriptor/pom.xml ./plugins/openfire-plugin-assembly-descriptor/
-COPY ./distribution/pom.xml ./distribution/
+COPY $PROJECT_FOLDER/pom.xml .
+COPY $PROJECT_FOLDER/i18n/pom.xml ./i18n/
+COPY $PROJECT_FOLDER/xmppserver/pom.xml ./xmppserver/
+COPY $PROJECT_FOLDER/starter/pom.xml ./starter/
+COPY $PROJECT_FOLDER/starter/libs/* ./starter/libs/
+COPY $PROJECT_FOLDER/plugins/pom.xml ./plugins/
+COPY $PROJECT_FOLDER/plugins/openfire-plugin-assembly-descriptor/pom.xml ./plugins/openfire-plugin-assembly-descriptor/
+COPY $PROJECT_FOLDER/distribution/pom.xml ./distribution/
 
 WORKDIR ca
 # copy the certificate from aws build stage and create a keystore with it
@@ -40,53 +39,39 @@ RUN openssl pkcs12 -export -in feinfone_ca.crt -inkey feinfone.key -out keystore
 WORKDIR /usr/src
 # get all necessary plugins
 # 1. official plugins
-# DB Access (Official Openfire plugin)
+# DB Access
 RUN wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_DBACCESS}/dbaccess.jar -O ./plugins/dbaccess.jar \
-# REST API (Official Openfire plugin)
+# REST API
  && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_RESTAPI}/restAPI.jar -O ./plugins/restAPI.jar \
-# Subscription (Official Openfire plugin)
+# Subscription
  && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_SUBSCRIPTION}/subscription.jar -O ./plugins/subscription.jar
 
-# 2. our plugins: clone private repository and use host machines SSH key
-# Download public key for github.com
-RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-RUN --mount=type=ssh if [ -z "$IMG_TAG" ] ; then \
- # [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
- git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git ./plugins/openfire-avatar-upload-plugin \
- # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
-  && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git ./plugins/openfire-voice-plugin \
- # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
-  && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git ./plugins/openfire-apns \
- # [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
-  && git clone --depth 1 git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin; \
-  else \
-  # [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
-   git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git -b $IMG_TAG ./plugins/openfire-avatar-upload-plugin \
-  # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
-   && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git -b $IMG_TAG ./plugins/openfire-voice-plugin \
-  # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
-   && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git -b $IMG_TAG ./plugins/openfire-apns \
-  # [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
-   && git clone --depth 1 git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git -b $IMG_TAG ./plugins/openfire-hazelcast-plugin \
-  ; fi
+# 2. take all plugins developed by us from the parent directory
+COPY ./openfire-apns ./plugins/openfire-apns
+COPY ./openfire-voice-plugin ./plugins/openfire-voice-plugin
+COPY ./openfire-avatar-upload-plugin ./plugins/openfire-avatar-upload-plugin
+COPY ./openfire-hazelcast-plugin ./plugins/openfire-hazelcast-plugin
+# add new plugins here
 
 RUN mvn dependency:go-offline
 
-COPY . .
+COPY $PROJECT_FOLDER .
 RUN mvn package
 
 # build target
 FROM openjdk:11-jre-slim as build
-COPY --from=packager /usr/src/distribution/target/distribution-base /usr/local/openfire
-COPY --from=packager /usr/src/build/docker/entrypoint.sh /sbin/entrypoint.sh
-WORKDIR /usr/local/openfire
+# build arguments
+ARG PROJECT_FOLDER=Openfire
 
-COPY build/docker/inject_db_settings.sh \
-     build/docker/inject_hazelcast_settings.sh \
-     build/docker/template_openfire.xml \
-     build/docker/template_hazelcast.xml \
-     build/docker/template_security.xml \
+WORKDIR /usr/local/openfire
+COPY --from=packager /usr/src/distribution/target/distribution-base .
+COPY --from=packager /usr/src/build/docker/entrypoint_local.sh /sbin/entrypoint.sh
+
+COPY $PROJECT_FOLDER/build/docker/inject_db_settings.sh \
+     $PROJECT_FOLDER/build/docker/inject_hazelcast_settings.sh \
+     $PROJECT_FOLDER/build/docker/template_openfire.xml \
+     $PROJECT_FOLDER/build/docker/template_hazelcast.xml \
+     $PROJECT_FOLDER/build/docker/template_security.xml \
      ./
 
 # copy push notification credentials
@@ -125,6 +110,6 @@ RUN apt-get update -qq \
 
 LABEL maintainer="florian.kinder@fankserver.com"
 
-EXPOSE 3478/tcp 3479/tcp 5222/tcp 5223/tcp 5229/tcp 5275/tcp 5276/tcp 5262/tcp 5263/tcp 5701/tcp 7070/tcp 7443/tcp 7777/tcp 9090/tcp 9091/tcp
+EXPOSE 5005 3478/tcp 3479/tcp 5222/tcp 5223/tcp 5229/tcp 5275/tcp 5276/tcp 5262/tcp 5263/tcp 5701/tcp 7070/tcp 7443/tcp 7777/tcp 9090/tcp 9091/tcp
 VOLUME ["${OPENFIRE_DATA_DIR}"]
-CMD ["/sbin/entrypoint.sh"]
+ENTRYPOINT ["/sbin/entrypoint.sh"]

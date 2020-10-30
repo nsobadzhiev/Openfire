@@ -24,6 +24,7 @@ import org.jivesoftware.openfire.privacy.PrivacyList;
 import org.jivesoftware.openfire.privacy.PrivacyListManager;
 import org.jivesoftware.openfire.session.ClientSession;
 import org.jivesoftware.openfire.user.UserAlreadyExistsException;
+import org.jivesoftware.openfire.user.UserManager;
 import org.jivesoftware.openfire.user.UserNameManager;
 import org.jivesoftware.openfire.user.UserNotFoundException;
 import org.jivesoftware.util.JiveConstants;
@@ -325,8 +326,18 @@ public class Roster implements Cacheable, Externalizable {
         }
         org.xmpp.packet.Roster roster = new org.xmpp.packet.Roster();
         roster.setType(IQ.Type.set);
-        org.xmpp.packet.Roster.Item item = roster.addItem(user, nickname, null,
+        org.xmpp.packet.Roster.Item item;
+
+        try {
+            UserManager.getUserProvider().loadUser(user.toBareJID());
+            item = roster.addItem(user, nickname, org.xmpp.packet.Roster.Ask.subscribe,
+                org.xmpp.packet.Roster.Subscription.from, groups);
+            Log.info("Adding an existing user to the roster {}. Changing subscription to from", user.toBareJID());
+        } catch (UserNotFoundException e) {
+            item = roster.addItem(user, nickname, org.xmpp.packet.Roster.Ask.subscribe,
                 org.xmpp.packet.Roster.Subscription.none, groups);
+            Log.info("Adding an non-existing user to the roster {}. Init with none subscription", user.toBareJID());
+        }
 
         RosterItem rosterItem = new RosterItem(item);
         // Fire event indicating that a roster item is about to be added
@@ -445,22 +456,25 @@ public class Roster implements Cacheable, Externalizable {
             RosterItem.SubType subType = itemToRemove.getSubStatus();
 
             // Cancel any existing presence subscription between the user and the contact
-            if (subType == RosterItem.SUB_TO || subType == RosterItem.SUB_BOTH) {
-                Presence presence = new Presence();
-                presence.setFrom(XMPPServer.getInstance().createJID(username, null));
-                presence.setTo(itemToRemove.getJid());
-                presence.setType(Presence.Type.unsubscribe);
-                XMPPServer.getInstance().getPacketRouter().route(presence);
-            }
-
-            // cancel any existing presence subscription between the contact and the user
-            if (subType == RosterItem.SUB_FROM || subType == RosterItem.SUB_BOTH) {
-                Presence presence = new Presence();
-                presence.setFrom(XMPPServer.getInstance().createJID(username, null));
-                presence.setTo(itemToRemove.getJid());
-                presence.setType(Presence.Type.unsubscribed);
-                XMPPServer.getInstance().getPacketRouter().route(presence);
-            }
+            // Since we pre-approve presences, even if someone deletes us from their roster
+            // we should still allow them to probe for our presence
+            // Uncomment to revert to standard XMPP functionality
+//            if (subType == RosterItem.SUB_TO || subType == RosterItem.SUB_BOTH) {
+//                Presence presence = new Presence();
+//                presence.setFrom(XMPPServer.getInstance().createJID(username, null));
+//                presence.setTo(itemToRemove.getJid());
+//                presence.setType(Presence.Type.unsubscribe);
+//                XMPPServer.getInstance().getPacketRouter().route(presence);
+//            }
+//
+//            // cancel any existing presence subscription between the contact and the user
+//            if (subType == RosterItem.SUB_FROM || subType == RosterItem.SUB_BOTH) {
+//                Presence presence = new Presence();
+//                presence.setFrom(XMPPServer.getInstance().createJID(username, null));
+//                presence.setTo(itemToRemove.getJid());
+//                presence.setType(Presence.Type.unsubscribed);
+//                XMPPServer.getInstance().getPacketRouter().route(presence);
+//            }
 
             // If removing the user was successful, remove the user from the subscriber list:
             RosterItem item = rosterItems.remove(user.toBareJID());
