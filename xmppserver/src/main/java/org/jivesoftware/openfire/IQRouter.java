@@ -17,6 +17,9 @@
 package org.jivesoftware.openfire;
 
 import org.dom4j.Element;
+import org.jivesoftware.openfire.cluster.ClusterManager;
+import org.jivesoftware.openfire.cluster.IQResultListenerTask;
+import org.jivesoftware.openfire.cluster.NodeID;
 import org.jivesoftware.openfire.container.BasicModule;
 import org.jivesoftware.openfire.handler.IQHandler;
 import org.jivesoftware.openfire.interceptor.InterceptorManager;
@@ -30,6 +33,8 @@ import org.jivesoftware.openfire.session.Session;
 import org.jivesoftware.openfire.user.UserManager;
 import org.jivesoftware.util.LocaleUtils;
 import org.jivesoftware.util.TaskEngine;
+import org.jivesoftware.util.cache.Cache;
+import org.jivesoftware.util.cache.CacheFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmpp.component.IQResultListener;
@@ -57,6 +62,7 @@ public class IQRouter extends BasicModule {
     private Map<String, IQHandler> namespace2Handlers = new ConcurrentHashMap<>();
     private Map<String, IQResultListener> resultListeners = new ConcurrentHashMap<>();
     private Map<String, Long> resultTimeout = new ConcurrentHashMap<>();
+    private Cache<String, NodeID> resultPending = CacheFactory.createCache("Routing Result Listeners");
     private SessionManager sessionManager;
     private UserManager userManager;
 
@@ -240,6 +246,7 @@ public class IQRouter extends BasicModule {
      */
     public void addIQResultListener(String id, IQResultListener listener, long timeoutmillis) {
         resultListeners.put(id, listener);
+        resultPending.put(id, XMPPServer.getInstance().getNodeID());
         resultTimeout.put(id, System.currentTimeMillis() + timeoutmillis);
     }
 
@@ -296,18 +303,27 @@ public class IQRouter extends BasicModule {
         }
         if (packet.getID() != null && (IQ.Type.result == packet.getType() || IQ.Type.error == packet.getType())) {
             // The server got an answer to an IQ packet that was sent from the server
+
+            // If there's a listener for this result at all, then it's likely that that listener had been registered
+            // on this cluster node. For efficiency, try the local cluster node before triggering tasks in the rest
+            // of the cluster.
             IQResultListener iqResultListener = resultListeners.remove(packet.getID());
             if (iqResultListener != null) {
                 resultTimeout.remove(packet.getID());
-                if (iqResultListener != null) {
-                    try {
-                        iqResultListener.receivedAnswer(packet);
-                    }
-                    catch (Exception e) {
-                        Log.error(
-                                "Error processing answer of remote entity. Answer: "
-                                        + packet.toXML(), e);
-                    }
+                resultPending.remove(packet.getID());
+                try {
+                    iqResultListener.receivedAnswer(packet);
+                }
+                catch (Exception e) {
+                    Log.error("Error processing answer of remote entity. Answer: " + packet.toXML(), e);
+                }
+                return;
+            } else if (ClusterManager.isClusteringStarted() ) {
+                // Only do lookups in the cluster, after it's determined that the local node cannot process the result.
+                final NodeID nodeID = resultPending.remove(packet.getID()); // remove it, to reduce the risk of this packet being sent back and forth.
+                if ( nodeID != null && !XMPPServer.getInstance().getNodeID().equals( nodeID ) )
+                {
+                    CacheFactory.doClusterTask( new IQResultListenerTask( packet ), nodeID.toByteArray() );
                     return;
                 }
             }
@@ -336,7 +352,7 @@ public class IQRouter extends BasicModule {
                 }
                 else {
                     // Check if communication to local users is allowed
-                    if (recipientJID != null && userManager.isRegisteredUser(recipientJID.getNode())) {
+                    if (recipientJID != null && userManager.isRegisteredUser(recipientJID, false)) {
                         PrivacyList list =
                                 PrivacyListManager.getInstance().getDefaultPrivacyList(recipientJID.getNode());
                         if (list != null && list.shouldBlockPacket(packet)) {
@@ -375,7 +391,7 @@ public class IQRouter extends BasicModule {
                 // RFC 6121 8.5.1.  No Such User http://xmpp.org/rfcs/rfc6121.html#rules-localpart-nosuchuser
                 // If the 'to' address specifies a bare JID <localpart@domainpart> or full JID <localpart@domainpart/resourcepart> where the domainpart of the JID matches a configured domain that is serviced by the server itself, the server MUST proceed as follows.
                 // If the user account identified by the 'to' attribute does not exist, how the stanza is processed depends on the stanza type.
-                if (recipientJID != null && recipientJID.getNode() != null && serverName.equals(recipientJID.getDomain()) && !userManager.isRegisteredUser(recipientJID.getNode()) && sessionManager.getSession(recipientJID) == null && (IQ.Type.set == packet.getType() || IQ.Type.get == packet.getType())) {
+                if (recipientJID != null && recipientJID.getNode() != null && serverName.equals(recipientJID.getDomain()) && !userManager.isRegisteredUser(recipientJID, false) && sessionManager.getSession(recipientJID) == null && (IQ.Type.set == packet.getType() || IQ.Type.get == packet.getType())) {
                     // For an IQ stanza, the server MUST return a <service-unavailable/> stanza error to the sender.
                     sendErrorPacket(packet, PacketError.Condition.service_unavailable);
                     return;
