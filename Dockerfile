@@ -75,7 +75,7 @@ RUN --mount=type=ssh if [ -z "$IMG_TAG" ] ; then \
    && git clone --depth 1 git@github.com:voiceup-chat/openfire-addressbook-roster-plugin.git -b $IMG_TAG ./plugins/openfire-addressbook-roster-plugin \
   ; fi
 
-RUN mvn dependency:go-offline
+RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn dependency:go-offline
 
 COPY . .
 RUN mvn package

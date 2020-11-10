@@ -54,7 +54,7 @@ COPY ./openfire-hazelcast-plugin ./plugins/openfire-hazelcast-plugin
 COPY ./openfire-addressbook-roster-plugin ./plugins/openfire-addressbook-roster-plugin
 # add new plugins here
 
-RUN mvn dependency:go-offline
+RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn dependency:go-offline
 
 COPY $PROJECT_FOLDER .
 RUN mvn package
