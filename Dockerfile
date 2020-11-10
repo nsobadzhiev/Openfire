@@ -78,7 +78,7 @@ RUN --mount=type=ssh if [ -z "$IMG_TAG" ] ; then \
 RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn dependency:go-offline
 
 COPY . .
-RUN mvn package
+RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn package
 
 # build target
 FROM openjdk:11-jre-slim as build
