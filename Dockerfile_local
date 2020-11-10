@@ -51,6 +51,7 @@ COPY ./openfire-apns ./plugins/openfire-apns
 COPY ./openfire-voice-plugin ./plugins/openfire-voice-plugin
 COPY ./openfire-avatar-upload-plugin ./plugins/openfire-avatar-upload-plugin
 COPY ./openfire-hazelcast-plugin ./plugins/openfire-hazelcast-plugin
+COPY ./openfire-addressbook-roster-plugin ./plugins/openfire-addressbook-roster-plugin
 # add new plugins here
 
 RUN mvn dependency:go-offline
@@ -88,6 +89,7 @@ COPY --from=packager \
     /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
     /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
     /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
+    /usr/src/plugins/openfire-addressbook-roster-plugin/target/addressbookroster-openfire-plugin-assembly.jar \
     # add new plugins here
     ./plugins/
 
