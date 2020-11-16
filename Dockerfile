@@ -52,29 +52,33 @@ RUN wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_DBAC
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 
 RUN --mount=type=ssh if [ -z "$IMG_TAG" ] ; then \
- # [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
- git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git ./plugins/openfire-avatar-upload-plugin \
- # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
-  && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git ./plugins/openfire-voice-plugin \
- # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
-  && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git ./plugins/openfire-apns \
- # [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
-  && git clone --depth 1 git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin; \
-  else \
   # [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
-   git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git -b $IMG_TAG ./plugins/openfire-avatar-upload-plugin \
+  git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git ./plugins/openfire-avatar-upload-plugin \
   # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
-   && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git -b $IMG_TAG ./plugins/openfire-voice-plugin \
+  && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git ./plugins/openfire-voice-plugin \
   # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
-   && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git -b $IMG_TAG ./plugins/openfire-apns \
+  && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git ./plugins/openfire-apns \
   # [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
+  && git clone --depth 1 git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin \
+  # [Addressbook Roster plugin](https://github.com/voiceup-chat/openfire-addressbook-roster-plugin)
+  && git clone --depth 1 git@github.com:voiceup-chat/openfire-addressbook-roster-plugin.git ./plugins/openfire-addressbook-roster-plugin \
+  ; else \
+   # [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
+   git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git -b $IMG_TAG ./plugins/openfire-avatar-upload-plugin \
+   # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
+   && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git -b $IMG_TAG ./plugins/openfire-voice-plugin \
+   # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
+   && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git -b $IMG_TAG ./plugins/openfire-apns \
+   # [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
    && git clone --depth 1 git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git -b $IMG_TAG ./plugins/openfire-hazelcast-plugin \
+   # [Addressbook Roster plugin](https://github.com/voiceup-chat/openfire-addressbook-roster-plugin)
+   && git clone --depth 1 git@github.com:voiceup-chat/openfire-addressbook-roster-plugin.git -b $IMG_TAG ./plugins/openfire-addressbook-roster-plugin \
   ; fi
 
-RUN mvn dependency:go-offline
+RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn dependency:go-offline
 
 COPY . .
-RUN mvn package
+RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn package
 
 # build target
 FROM openjdk:11-jre-slim as build
@@ -103,6 +107,7 @@ COPY --from=packager \
     /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
     /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
     /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
+    /usr/src/plugins/openfire-addressbook-roster-plugin/target/addressbookroster-openfire-plugin-assembly.jar \
     # add new plugins here
     ./plugins/
 

@@ -97,6 +97,7 @@
         <module>openfire-voice-plugin</module>
         <module>openfire-apns</module>
         <module>openfire-hazelcast-plugin</module>
+        <module>openfire-addressbook-roster-plugin</module>
     </modules>
 
     <organization>
