@@ -1,0 +1,40 @@
+# Continuous Deployment workflow
+name: CD
+
+# runs on push on the main branches
+on:
+  push:
+    branches:
+      - master
+      - main
+      - develop
+
+# one job and step to deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ 11 ] # TODO configured in integrate.yml and deploy.yml
+    # set the AWS token to access the S3 bucket for the maven repository
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    steps:
+      # Checks-out the repository under $GITHUB_WORKSPACE, so the job can access it
+      - uses: actions/checkout@v2
+
+      # build docker image
+      - name: Docker build
+        run: |
+          docker build --build-arg KEYSTORE_PWD=${{ secrets.KEYSTORE_PWD }} -t 556016385979.dkr.ecr.eu-central-1.amazonaws.com/feinfone:75 .
+
+      # deploy docker image on AWS
+      - name: AWS ECR deploy
+        # TODO maybe hide some details behind GitHub secrets
+        run: |
+          aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 556016385979.dkr.ecr.eu-central-1.amazonaws.com/feinfone
+          docker push 556016385979.dkr.ecr.eu-central-1.amazonaws.com/feinfone:75
+
+      # TODO find a way to use terraform here

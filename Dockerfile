@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.0.0-experimental
 FROM amazon/aws-cli as aws
 # download push notification credentials from S3, the servers private key and the signed certificate
-RUN --mount=type=secret,id=aws,target=/root/.aws/credentials aws s3 cp s3://com.feinfone.build/apns/apns_key.p8 /usr/local/openfire/authKey.p8 \
+RUN aws s3 cp s3://com.feinfone.build/apns/apns_key.p8 /usr/local/openfire/authKey.p8 \
     && aws s3 cp s3://com.feinfone.build/cert/feinfone.key /usr/local/openfire/feinfone.key \
     && aws s3 cp s3://com.feinfone.build/cert/feinfone_ca.crt /usr/local/openfire/feinfone_ca.crt
 
@@ -13,7 +13,6 @@ FROM maven:3.6.2-jdk-11 as packager
 ARG VERSION_DBACCESS=1.2.2
 ARG VERSION_RESTAPI=1.4.0
 ARG VERSION_SUBSCRIPTION=1.4.0
-ARG IMG_TAG
 
 ARG KEYSTORE_PWD
 
@@ -47,38 +46,10 @@ RUN wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_DBAC
 # Subscription (Official Openfire plugin)
  && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_SUBSCRIPTION}/subscription.jar -O ./plugins/subscription.jar
 
-# 2. our plugins: clone private repository and use host machines SSH key
-# Download public key for github.com
-RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-RUN --mount=type=ssh if [ -z "$IMG_TAG" ] ; then \
-  # [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
-  git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git ./plugins/openfire-avatar-upload-plugin \
-  # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
-  && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git ./plugins/openfire-voice-plugin \
-  # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
-  && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git ./plugins/openfire-apns \
-  # [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
-  && git clone --depth 1 git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin \
-  # [Addressbook Roster plugin](https://github.com/voiceup-chat/openfire-addressbook-roster-plugin)
-  && git clone --depth 1 git@github.com:voiceup-chat/openfire-addressbook-roster-plugin.git ./plugins/openfire-addressbook-roster-plugin \
-  ; else \
-   # [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
-   git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git -b $IMG_TAG ./plugins/openfire-avatar-upload-plugin \
-   # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
-   && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git -b $IMG_TAG ./plugins/openfire-voice-plugin \
-   # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
-   && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git -b $IMG_TAG ./plugins/openfire-apns \
-   # [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
-   && git clone --depth 1 git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git -b $IMG_TAG ./plugins/openfire-hazelcast-plugin \
-   # [Addressbook Roster plugin](https://github.com/voiceup-chat/openfire-addressbook-roster-plugin)
-   && git clone --depth 1 git@github.com:voiceup-chat/openfire-addressbook-roster-plugin.git -b $IMG_TAG ./plugins/openfire-addressbook-roster-plugin \
-  ; fi
-
-RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn dependency:go-offline
-
+# build with Maven
+RUN mvn dependency:go-offline
 COPY . .
-RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn package
+RUN mvn package
 
 # build target
 FROM openjdk:11-jre-slim as build
@@ -99,19 +70,12 @@ COPY --from=aws /usr/local/openfire/authKey.p8 .
 # copy keystore with self signed certificate
 COPY --from=packager /usr/src/ca/keystore ./resources/security/
 
-# (move all plugin JARs to the plugin folder)
+# (move all downloaded plugin JARs to the plugin folder)
 COPY --from=packager \
     /usr/src/plugins/dbaccess.jar \
     /usr/src/plugins/restAPI.jar \
     /usr/src/plugins/subscription.jar \
-    /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
-    /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
-    /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
-    /usr/src/plugins/openfire-addressbook-roster-plugin/target/addressbookroster-openfire-plugin-assembly.jar \
-    # add new plugins here
     ./plugins/
-
-COPY --from=packager /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-openfire-plugin-assembly.jar ./plugins/hazelcast.jar
 
 ENV OPENFIRE_USER=openfire \
     OPENFIRE_DIR=/usr/local/openfire \

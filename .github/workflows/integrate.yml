@@ -1,0 +1,62 @@
+# Continuous Integration workflow
+name: CI
+
+# run all integration jobs on pull request
+on:
+  pull_request
+
+jobs:
+  # one job for building and testing
+  build_test:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ 11 ]
+    steps:
+      # Checks-out the repository under $GITHUB_WORKSPACE, so the job can access it
+      - uses: actions/checkout@v2
+
+      # TODO check as first step if code formatting with .editorconfig is applied properly
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+
+      - name: Cache Maven repository
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-java${{ matrix.java }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-java${{ matrix.java }}-maven-
+            ${{ runner.os }}-
+
+      # compile
+      - name: Maven build
+        run: |
+          mvn compile
+
+      # test
+      - name: Maven test
+        run: |
+          mvn test
+
+      # Execute aioxmpp-based CI tests
+      - name: Fix file permissions
+        run: |
+          chmod +x distribution/target/distribution-base/bin/openfire.sh
+          chmod +x ./runAioxmppIntegrationTests
+          chmod +x ./runIntegrationTests
+
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.6
+
+      - name: Run aioxmpp tests
+        run: ./runAioxmppIntegrationTests -d -l -h example.org -i 127.0.0.1 || ./runAioxmppIntegrationTests -d -l -h example.org -i 127.0.0.1 || ./runAioxmppIntegrationTests -d -l -h example.org -i 127.0.0.1 # Try tests a few times, in case of flakiness
+
+      - name: Run smack tests
+        run: ./runIntegrationTests -d -l -i 127.0.0.1 || ./runIntegrationTests -d -l -i 127.0.0.1 || ./runIntegrationTests -d -l -i 127.0.0.1 # Try tests a few times, in case of flakiness
