@@ -42,14 +42,9 @@ jobs:
       # compile
       - name: Maven build
         run: |
-          mvn compile
+          mvn package
 
-      # test
-      - name: Maven test
-        run: |
-          mvn test
-
-      # Execute aioxmpp-based CI tests
+      # Execute aioxmpp-based and smack CI tests
       - name: Fix file permissions
         run: |
           chmod +x distribution/target/distribution-base/bin/openfire.sh
