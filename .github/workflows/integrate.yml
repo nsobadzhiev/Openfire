@@ -36,12 +36,7 @@ jobs:
       # compile
       - name: Maven build
         run: |
-          mvn compile
-
-      # test
-      - name: Maven test
-        run: |
-          mvn test
+          mvn package
 
       # Execute aioxmpp-based CI tests
       - name: Fix file permissions
