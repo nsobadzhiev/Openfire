@@ -2,8 +2,10 @@
 FROM amazon/aws-cli as aws
 ARG AWS_ACCESS_KEY_ID
 ARG AWS_SECRET_ACCESS_KEY
+ARG AWS_REGION
 # download push notification credentials from S3, the servers private key and the signed certificate
-RUN aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID \
+RUN aws configure set default.region $AWS_REGION \
+    && aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID \
     && aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY \
     && aws s3 cp s3://com.feinfone.build/apns/apns_key.p8 /usr/local/openfire/authKey.p8 \
     && aws s3 cp s3://com.feinfone.build/cert/feinfone.key /usr/local/openfire/feinfone.key \
@@ -12,13 +14,10 @@ RUN aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID \
 # Maven target to build the Openfire artifact
 FROM maven:3.6.2-jdk-11 as packager
 
-# optional build arguments
-ARG VERSION_DBACCESS=1.2.2
-ARG VERSION_RESTAPI=1.4.0
-ARG VERSION_SUBSCRIPTION=1.4.0
-
 # required build arguments
 ARG KEYSTORE_PWD
+
+ARG AWS_REGION
 ARG AWS_ACCESS_KEY_ID
 ARG AWS_SECRET_ACCESS_KEY
 
@@ -43,20 +42,15 @@ RUN openssl pkcs12 -export -in feinfone_ca.crt -inkey feinfone.key -out keystore
     && keytool -importkeystore -destkeystore keystore -deststorepass $KEYSTORE_PWD -srckeystore keystore.p12 -srcstoretype PKCS12 -srcstorepass $KEYSTORE_PWD
 
 WORKDIR /usr/src
-# get all necessary plugins
-# 1. official plugins
-# DB Access (Official Openfire plugin)
-RUN wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_DBACCESS}/dbaccess.jar -O ./plugins/dbaccess.jar \
-# REST API (Official Openfire plugin)
- && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_RESTAPI}/restAPI.jar -O ./plugins/restAPI.jar \
-# Subscription (Official Openfire plugin)
- && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_SUBSCRIPTION}/subscription.jar -O ./plugins/subscription.jar
 
 # set AWS credentials to let Maven have acces to it
-RUN aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID \
+RUN apt-get update && apt-get -y install awscli \
+    && aws configure set default.region $AWS_REGION \
+    && aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID \
     && aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
 # build with Maven
+
 RUN mvn dependency:go-offline
 COPY . .
 RUN mvn package
@@ -79,13 +73,6 @@ COPY --from=aws /usr/local/openfire/authKey.p8 .
 
 # copy keystore with self signed certificate
 COPY --from=packager /usr/src/ca/keystore ./resources/security/
-
-# (move all downloaded plugin JARs to the plugin folder)
-COPY --from=packager \
-    /usr/src/plugins/dbaccess.jar \
-    /usr/src/plugins/restAPI.jar \
-    /usr/src/plugins/subscription.jar \
-    ./plugins/
 
 ENV OPENFIRE_USER=openfire \
     OPENFIRE_DIR=/usr/local/openfire \

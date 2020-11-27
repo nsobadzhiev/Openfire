@@ -69,9 +69,38 @@
                             <destFileName>search.jar</destFileName>
                         </artifactItem>
                         <artifactItem>
+                            <groupId>org.igniterealtime.openfire.plugins</groupId>
+                            <artifactId>dbaccess</artifactId>
+                            <type>jar</type>
+                            <overWrite>true</overWrite>
+                            <outputDirectory>
+                                ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
+                            </outputDirectory>
+                            <destFileName>dbaccess.jar</destFileName>
+                        </artifactItem>
+                        <artifactItem>
+                            <groupId>org.igniterealtime.openfire.plugins</groupId>
+                            <artifactId>restAPI</artifactId>
+                            <type>jar</type>
+                            <overWrite>true</overWrite>
+                            <outputDirectory>
+                                ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
+                            </outputDirectory>
+                            <destFileName>restAPI.jar</destFileName>
+                        </artifactItem>
+                        <artifactItem>
+                            <groupId>org.igniterealtime.openfire.plugins</groupId>
+                            <artifactId>subscription</artifactId>
+                            <type>jar</type>
+                            <overWrite>true</overWrite>
+                            <outputDirectory>
+                                ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
+                            </outputDirectory>
+                            <destFileName>subscription.jar</destFileName>
+                        </artifactItem>
+                        <artifactItem>
                             <groupId>chat.voiceup.openfire.plugins</groupId>
                             <artifactId>addressbookroster</artifactId>
-                            <version>1.0.0</version>
                             <type>jar</type>
                             <overWrite>true</overWrite>
                             <outputDirectory>
@@ -82,7 +111,6 @@
                         <artifactItem>
                             <groupId>chat.voiceup.openfire.plugins</groupId>
                             <artifactId>openfire-apns</artifactId>
-                            <version>0.1.1</version>
                             <type>jar</type>
                             <overWrite>true</overWrite>
                             <outputDirectory>
@@ -93,7 +121,6 @@
                         <artifactItem>
                             <groupId>chat.voiceup.openfire.plugins</groupId>
                             <artifactId>avatarupload</artifactId>
-                            <version>0.0.1</version>
                             <type>jar</type>
                             <overWrite>true</overWrite>
                             <outputDirectory>
@@ -104,7 +131,6 @@
                         <artifactItem>
                             <groupId>chat.voiceup.openfire.plugins</groupId>
                             <artifactId>hazelcast</artifactId>
-                            <version>2.4.2</version>
                             <type>jar</type>
                             <overWrite>true</overWrite>
                             <outputDirectory>
@@ -115,7 +141,6 @@
                         <artifactItem>
                             <groupId>chat.voiceup.openfire.plugins</groupId>
                             <artifactId>voice</artifactId>
-                            <version>0.1.1</version>
                             <type>jar</type>
                             <overWrite>true</overWrite>
                             <outputDirectory>
@@ -201,6 +226,54 @@
             <artifactId>search</artifactId>
             <version>1.7.3</version>
             <classifier>openfire-plugin-assembly</classifier>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.igniterealtime.openfire.plugins</groupId>
+            <artifactId>dbaccess</artifactId>
+            <version>1.2.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.igniterealtime.openfire.plugins</groupId>
+            <artifactId>restAPI</artifactId>
+            <version>1.4.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.igniterealtime.openfire.plugins</groupId>
+            <artifactId>subscription</artifactId>
+            <version>1.4.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>chat.voiceup.openfire.plugins</groupId>
+            <artifactId>addressbookroster</artifactId>
+            <version>1.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>chat.voiceup.openfire.plugins</groupId>
+            <artifactId>openfire-apns</artifactId>
+            <version>0.1.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>chat.voiceup.openfire.plugins</groupId>
+            <artifactId>avatarupload</artifactId>
+            <version>0.0.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>chat.voiceup.openfire.plugins</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>2.4.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>chat.voiceup.openfire.plugins</groupId>
+            <artifactId>voice</artifactId>
+            <version>0.1.1</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

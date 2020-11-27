@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: openfire
+  name: openfire
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: openfire
+  strategy: { }
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: openfire
+    spec:
+      containers:
+        - image: openfire:latest
+          imagePullPolicy: Never
+          name: openfire
+          resources: { }
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+status: { }

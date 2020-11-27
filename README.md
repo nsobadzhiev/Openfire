@@ -142,6 +142,26 @@ docker run --env DB_USER=openfire --env DB_PASS=testpass --env DB_URL=host.docke
 The JVM will suspend until a remote debugger has connected.
 Then just connect with a remote debugger of your choice to localhost:5005.
 
+#### Running a cluster with docker-compose
+
+#### Running with Kubernetes (minikube)
+
+###### Installation
+```
+brew install minikube
+```
+
+###### Deployment
+Before you build the image with Docker run the following command:
+```
+eval $(minikube docker-env)
+```
+
+Now build the image:
+```
+docker buildx build --secret id=aws,src=$HOME/.aws/credentials --build-arg AWS_REGION=eu-central-1 -t openfire:latest -f Dockerfile_local .
+```
+
 Testing your changes
 --------------------
 
