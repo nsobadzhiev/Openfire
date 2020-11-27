@@ -1,8 +1,9 @@
-# syntax=docker/dockerfile:1.0.0-experimental
 FROM amazon/aws-cli as aws
+# required build arguments
 ARG AWS_ACCESS_KEY_ID
 ARG AWS_SECRET_ACCESS_KEY
 ARG AWS_REGION
+
 # download push notification credentials from S3, the servers private key and the signed certificate
 RUN aws configure set default.region $AWS_REGION \
     && aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID \
