@@ -123,6 +123,7 @@ COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose up
 ###### Installation
 ```
 brew install minikube
+minikube start
 ```
 
 ###### Deployment
@@ -134,6 +135,27 @@ eval $(minikube docker-env)
 Now build the image:
 ```
 docker buildx build --secret id=aws,src=$HOME/.aws/credentials --build-arg AWS_REGION=eu-central-1 -t openfire:latest -f Dockerfile_local .
+```
+
+Deploy on Kubernetes:
+```
+kubectl create -f deployment.yml
+```
+
+Apply service on Kubernetes:
+```
+kubectl apply -f service.yml
+```
+
+To delete them again run:
+```
+kubectl delete -f service.yml
+kubectl delete -f deployment.yml
+```
+
+To tunnel the service through minikube run:
+```
+minikube service openfire-service
 ```
 
 Testing your changes
