@@ -10,7 +10,7 @@ FROM maven:3.6.2-jdk-11 as packager
 
 ARG KEYSTORE_PWD=changeit
 
-ARG AWS_REGION
+ARG AWS_REGION=eu-central-1
 
 WORKDIR /usr/src
 
@@ -46,7 +46,7 @@ FROM openjdk:11-jre-slim as build
 
 WORKDIR /usr/local/openfire
 COPY --from=packager /usr/src/distribution/target/distribution-base .
-COPY --from=packager /usr/src/build/docker/entrypoint.sh /sbin/entrypoint.sh
+COPY --from=packager /usr/src/build/docker/entrypoint_local.sh /sbin/entrypoint.sh
 
 COPY build/docker/inject_db_settings.sh \
      build/docker/inject_hazelcast_settings.sh \

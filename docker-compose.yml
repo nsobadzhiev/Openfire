@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  openfire:
+  openfire-local:
     build:
       context: .
       dockerfile: Dockerfile_local
@@ -17,41 +17,24 @@ services:
       - CLUSTER_NAME=stage-ecs-cluster
       - SUBNET='10.0.*.*'
     ports:
-      - "3478"
-      - "3479"
-      - "5222"
-      - "5223"
-      - "5229"
-      - "5275"
-      - "5276"
-      - "5262"
-      - "5263"
-      - "5701"
-      - "7070"
-      - "7443"
-      - "7777"
-      - "9090"
-      - "9091"
-    networks:
-      - inner
-    deploy:
-      mode: replicated
-      replicas: 2
-      endpoint_mode: vip
-
-  nginx:
-    image: nginx:latest
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - openfire
-    ports:
+      - "3478:3478"
+      - "3479:3479"
+      - "5222:5222"
+      - "5223:5223"
+      - "5229:5229"
+      - "5275:5275"
+      - "5276:5276"
+      - "5262:5262"
+      - "5263:5263"
+      - "5701:5701"
+      - "7070:7070"
+      - "7443:7443"
+      - "7777:7777"
       - "9090:9090"
+      - "9091:9091"
+      - "5005:5005"
     networks:
       - inner
-
-volumes:
-  db-data:
 
 networks:
   inner:

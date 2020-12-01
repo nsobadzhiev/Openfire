@@ -72,6 +72,7 @@
                             <groupId>org.igniterealtime.openfire.plugins</groupId>
                             <artifactId>dbaccess</artifactId>
                             <type>jar</type>
+                            <classifier>openfire-plugin-assembly</classifier>
                             <overWrite>true</overWrite>
                             <outputDirectory>
                                 ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
@@ -82,6 +83,7 @@
                             <groupId>org.igniterealtime.openfire.plugins</groupId>
                             <artifactId>restAPI</artifactId>
                             <type>jar</type>
+                            <classifier>openfire-plugin-assembly</classifier>
                             <overWrite>true</overWrite>
                             <outputDirectory>
                                 ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
@@ -92,6 +94,7 @@
                             <groupId>org.igniterealtime.openfire.plugins</groupId>
                             <artifactId>subscription</artifactId>
                             <type>jar</type>
+                            <classifier>openfire-plugin-assembly</classifier>
                             <overWrite>true</overWrite>
                             <outputDirectory>
                                 ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
@@ -102,6 +105,7 @@
                             <groupId>chat.voiceup.openfire.plugins</groupId>
                             <artifactId>addressbookroster</artifactId>
                             <type>jar</type>
+                            <classifier>openfire-plugin-assembly</classifier>
                             <overWrite>true</overWrite>
                             <outputDirectory>
                                 ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
@@ -112,6 +116,7 @@
                             <groupId>chat.voiceup.openfire.plugins</groupId>
                             <artifactId>openfire-apns</artifactId>
                             <type>jar</type>
+                            <classifier>openfire-plugin-assembly</classifier>
                             <overWrite>true</overWrite>
                             <outputDirectory>
                                 ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
@@ -122,6 +127,7 @@
                             <groupId>chat.voiceup.openfire.plugins</groupId>
                             <artifactId>avatarupload</artifactId>
                             <type>jar</type>
+                            <classifier>openfire-plugin-assembly</classifier>
                             <overWrite>true</overWrite>
                             <outputDirectory>
                                 ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
@@ -132,6 +138,7 @@
                             <groupId>chat.voiceup.openfire.plugins</groupId>
                             <artifactId>hazelcast</artifactId>
                             <type>jar</type>
+                            <classifier>openfire-plugin-assembly</classifier>
                             <overWrite>true</overWrite>
                             <outputDirectory>
                                 ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
@@ -142,6 +149,7 @@
                             <groupId>chat.voiceup.openfire.plugins</groupId>
                             <artifactId>voice</artifactId>
                             <type>jar</type>
+                            <classifier>openfire-plugin-assembly</classifier>
                             <overWrite>true</overWrite>
                             <outputDirectory>
                                 ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
@@ -232,48 +240,56 @@
             <groupId>org.igniterealtime.openfire.plugins</groupId>
             <artifactId>dbaccess</artifactId>
             <version>1.2.2</version>
+            <classifier>openfire-plugin-assembly</classifier>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.igniterealtime.openfire.plugins</groupId>
             <artifactId>restAPI</artifactId>
             <version>1.4.0</version>
+            <classifier>openfire-plugin-assembly</classifier>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.igniterealtime.openfire.plugins</groupId>
             <artifactId>subscription</artifactId>
             <version>1.4.1</version>
+            <classifier>openfire-plugin-assembly</classifier>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>chat.voiceup.openfire.plugins</groupId>
             <artifactId>addressbookroster</artifactId>
             <version>1.0.0</version>
+            <classifier>openfire-plugin-assembly</classifier>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>chat.voiceup.openfire.plugins</groupId>
             <artifactId>openfire-apns</artifactId>
             <version>0.1.1</version>
+            <classifier>openfire-plugin-assembly</classifier>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>chat.voiceup.openfire.plugins</groupId>
             <artifactId>avatarupload</artifactId>
             <version>0.0.1</version>
+            <classifier>openfire-plugin-assembly</classifier>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>chat.voiceup.openfire.plugins</groupId>
             <artifactId>hazelcast</artifactId>
             <version>2.4.2</version>
+            <classifier>openfire-plugin-assembly</classifier>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>chat.voiceup.openfire.plugins</groupId>
             <artifactId>voice</artifactId>
             <version>0.1.1</version>
+            <classifier>openfire-plugin-assembly</classifier>
             <scope>provided</scope>
         </dependency>
     </dependencies>

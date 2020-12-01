@@ -11,5 +11,7 @@ spec:
   ports:
     - name: admin-http
       port: 9090
+      targetPort: 9090
     - name: admin-https
       port: 9091
+      targetPort: 9091
