@@ -204,12 +204,12 @@
 
     <repositories>
         <repository>
-            <id>ej-technologies</id>
-            <url>https://maven.ej-technologies.com/repository/</url>
-        </repository>
-        <repository>
             <id>com.feinfone.maven-repo</id>
             <url>s3://com.feinfone.maven-repo/release</url>
+        </repository>
+        <repository>
+            <id>ej-technologies</id>
+            <url>https://maven.ej-technologies.com/repository/</url>
         </repository>
     </repositories>
 
@@ -260,7 +260,7 @@
         <dependency>
             <groupId>chat.voiceup.openfire.plugins</groupId>
             <artifactId>addressbookroster</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
             <classifier>openfire-plugin-assembly</classifier>
             <scope>provided</scope>
         </dependency>

@@ -9,7 +9,6 @@ RUN --mount=type=secret,id=aws,target=/root/.aws/credentials aws s3 cp s3://com.
 FROM maven:3.6.2-jdk-11 as packager
 
 ARG KEYSTORE_PWD=changeit
-
 ARG AWS_REGION=eu-central-1
 
 WORKDIR /usr/src
