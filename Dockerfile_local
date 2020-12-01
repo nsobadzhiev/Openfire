@@ -7,25 +7,20 @@ RUN --mount=type=secret,id=aws,target=/root/.aws/credentials aws s3 cp s3://com.
 
 # Maven target to get all dependencies and build
 FROM maven:3.6.2-jdk-11 as packager
-# build arguments
-ARG PROJECT_FOLDER=Openfire
-
-ARG VERSION_DBACCESS=1.2.2
-ARG VERSION_RESTAPI=1.4.0
-ARG VERSION_SUBSCRIPTION=1.4.0
 
 ARG KEYSTORE_PWD=changeit
+ARG AWS_REGION=eu-central-1
 
 WORKDIR /usr/src
 
-COPY $PROJECT_FOLDER/pom.xml .
-COPY $PROJECT_FOLDER/i18n/pom.xml ./i18n/
-COPY $PROJECT_FOLDER/xmppserver/pom.xml ./xmppserver/
-COPY $PROJECT_FOLDER/starter/pom.xml ./starter/
-COPY $PROJECT_FOLDER/starter/libs/* ./starter/libs/
-COPY $PROJECT_FOLDER/plugins/pom.xml ./plugins/
-COPY $PROJECT_FOLDER/plugins/openfire-plugin-assembly-descriptor/pom.xml ./plugins/openfire-plugin-assembly-descriptor/
-COPY $PROJECT_FOLDER/distribution/pom.xml ./distribution/
+COPY pom.xml .
+COPY i18n/pom.xml ./i18n/
+COPY xmppserver/pom.xml ./xmppserver/
+COPY starter/pom.xml ./starter/
+COPY starter/libs/* ./starter/libs/
+COPY plugins/pom.xml ./plugins/
+COPY plugins/openfire-plugin-assembly-descriptor/pom.xml ./plugins/openfire-plugin-assembly-descriptor/
+COPY distribution/pom.xml ./distribution/
 
 WORKDIR ca
 # copy the certificate from aws build stage and create a keystore with it
@@ -37,42 +32,26 @@ RUN openssl pkcs12 -export -in feinfone_ca.crt -inkey feinfone.key -out keystore
     && keytool -importkeystore -destkeystore keystore -deststorepass $KEYSTORE_PWD -srckeystore keystore.p12 -srcstoretype PKCS12 -srcstorepass $KEYSTORE_PWD
 
 WORKDIR /usr/src
-# get all necessary plugins
-# 1. official plugins
-# DB Access
-RUN wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_DBACCESS}/dbaccess.jar -O ./plugins/dbaccess.jar \
-# REST API
- && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_RESTAPI}/restAPI.jar -O ./plugins/restAPI.jar \
-# Subscription
- && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_SUBSCRIPTION}/subscription.jar -O ./plugins/subscription.jar
 
-# 2. take all plugins developed by us from the parent directory
-COPY ./openfire-apns ./plugins/openfire-apns
-COPY ./openfire-voice-plugin ./plugins/openfire-voice-plugin
-COPY ./openfire-avatar-upload-plugin ./plugins/openfire-avatar-upload-plugin
-COPY ./openfire-hazelcast-plugin ./plugins/openfire-hazelcast-plugin
-COPY ./openfire-addressbook-roster-plugin ./plugins/openfire-addressbook-roster-plugin
-# add new plugins here
+RUN apt-get update && apt-get -y install awscli && aws configure set default.region $AWS_REGION
 
 RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn dependency:go-offline
 
-COPY $PROJECT_FOLDER .
+COPY . .
 RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn package
 
 # build target
 FROM openjdk:11-jre-slim as build
-# build arguments
-ARG PROJECT_FOLDER=Openfire
 
 WORKDIR /usr/local/openfire
 COPY --from=packager /usr/src/distribution/target/distribution-base .
 COPY --from=packager /usr/src/build/docker/entrypoint_local.sh /sbin/entrypoint.sh
 
-COPY $PROJECT_FOLDER/build/docker/inject_db_settings.sh \
-     $PROJECT_FOLDER/build/docker/inject_hazelcast_settings.sh \
-     $PROJECT_FOLDER/build/docker/template_openfire.xml \
-     $PROJECT_FOLDER/build/docker/template_hazelcast.xml \
-     $PROJECT_FOLDER/build/docker/template_security.xml \
+COPY build/docker/inject_db_settings.sh \
+     build/docker/inject_hazelcast_settings.sh \
+     build/docker/template_openfire.xml \
+     build/docker/template_hazelcast.xml \
+     build/docker/template_security.xml \
      ./
 
 # copy push notification credentials
@@ -80,20 +59,6 @@ COPY --from=aws /usr/local/openfire/authKey.p8 .
 
 # copy keystore with self signed certificate
 COPY --from=packager /usr/src/ca/keystore ./resources/security/
-
-# (move all plugin JARs to the plugin folder)
-COPY --from=packager \
-    /usr/src/plugins/dbaccess.jar \
-    /usr/src/plugins/restAPI.jar \
-    /usr/src/plugins/subscription.jar \
-    /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
-    /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
-    /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
-    /usr/src/plugins/openfire-addressbook-roster-plugin/target/addressbookroster-openfire-plugin-assembly.jar \
-    # add new plugins here
-    ./plugins/
-
-COPY --from=packager /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-openfire-plugin-assembly.jar ./plugins/hazelcast.jar
 
 ENV OPENFIRE_USER=openfire \
     OPENFIRE_DIR=/usr/local/openfire \

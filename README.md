@@ -74,35 +74,20 @@ Other folders are:
 To build the complete project including plugins, run the command (only docker build supported)
 and replace the build argument `KEYSTORE_PWD` with the "Openfire keystore pass stage/prod" entry in our password database.
 It is important to use the same value since Openfire needs to know that password to access the keystore for secure communication.
-This password is persisted in the property store of Openfire which only changes when configured with the admin panel.
+This password is persisted in the property store of Openfire which can be configured with the admin panel.
 
-The `IMG_TAG` build argument is optional and can be used to clone all plugins for a certain tag.
-If this argument has been set then this project should be checked out for the same tag.
 ```
-docker buildx build --ssh default --secret id=aws,src=$HOME/.aws/credentials --build-arg KEYSTORE_PWD=<get-from-pw-db> --build-arg IMG_TAG=<nr_tag> .
+docker buildx build --ssh default --secret id=aws,src=$HOME/.aws/credentials --build-arg KEYSTORE_PWD=<get-from-pw-db> .
 ```
-Executing this command will forward your local SSH key (via SSH agent) and your AWS credentials to the docker build.
+Executing this command will forward your AWS credentials to the docker build.
+Since Build-Kit has a shortened output you might want to display the full logs.
+To do so add the option:
+```
+--progress=plain
+```
+to the previous command. 
 
 ##### Prerequisites
-To forward your SSH key pair it has to be generated (default file name) and added to your GitHub account.
-If no key pair has been created so far run following command:
-```
-ssh-keygen -t rsa -b 4096 -C "you@example.com"
-```
-
-Add some instructions to your ~/.ssh/config file which tells the SSH Agent to automatically load the keys and store the corresponding passphrases.
-```
-Host *
- UseKeychain yes
- AddKeysToAgent yes
- IdentityFile ~/.ssh/id_rsa
-```
-
-Add your private key to the SSH Agent:
-```
-ssh-add -K ~/.ssh/id_rsa
-```
-
 Your AWS credentials have to be configured.
 
 #### Docker local build
@@ -111,29 +96,15 @@ To bring up a local MySQL database run:
 docker-compose -f infra.yml up
 ```
 
-To build a docker image that contains all plugins and can be locally tested **all plugins and this project have to be
-contained in the same folder on your disk.**
-Run the following command in the parent directory of this project and replace `<project_folder>` with the name of the folder this project has been cloned to.
+Run the following command in the directory of this project.
 ```
-DOCKER_BUILDKIT=1 docker build -t openfire:latest --secret id=aws,src=$HOME/.aws/credentials -f <poject_folder>/Dockerfile_local --build-arg PROJECT_FOLDER=<project_folder> .
+DOCKER_BUILDKIT=1 docker build -t openfire:latest --secret id=aws,src=$HOME/.aws/credentials -f Dockerfile_local .
 ```
 This will create a docker image with remote debugging support on port 5005 suspending the JVM until a debugger connected.
 
-If a new plugin needs to be added it has to be added to **Dockerfile_local**.
-First the plugin folder needs to be copied to the **packager** image.
-```
-COPY ./<plugin_name> ./plugins/<plugin_name>
-```
+If a new plugin needs to be added it has to be added to **pom.xml** in **distribution** folder.
+
 This will include it in the Maven build.
-The resulting JAR of that plugin has to be copied from the packager image to the final image.
-Find this line and replace the comment with the resulting JAR. 
-```
-COPY --from=packager /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload-0.0.1-SNAPSHOT.jar \
-    /usr/src/plugins/openfire-voice-plugin/target/voice-0.0.11-SNAPSHOT.jar \
-    /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
-    # add new plugins here
-    /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-2.4.2-SNAPSHOT.jar ./plugins/
-```
 
 To create the container run this command:
 ```
@@ -141,6 +112,51 @@ docker run --env DB_USER=openfire --env DB_PASS=testpass --env DB_URL=host.docke
 ```
 The JVM will suspend until a remote debugger has connected.
 Then just connect with a remote debugger of your choice to localhost:5005.
+
+#### Running with docker-compose
+```
+COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose up
+```
+
+#### Running with Kubernetes (minikube)
+
+###### Installation
+```
+brew install minikube
+minikube start
+```
+
+###### Deployment
+Before you build the image with Docker run the following command:
+```
+eval $(minikube docker-env)
+```
+
+Now build the image:
+```
+docker buildx build --secret id=aws,src=$HOME/.aws/credentials --build-arg AWS_REGION=eu-central-1 -t openfire:latest -f Dockerfile_local .
+```
+
+Deploy on Kubernetes:
+```
+kubectl create -f deployment.yml
+```
+
+Apply service on Kubernetes:
+```
+kubectl apply -f service.yml
+```
+
+To delete them again run:
+```
+kubectl delete -f service.yml
+kubectl delete -f deployment.yml
+```
+
+To tunnel the service through minikube run:
+```
+minikube service openfire-service
+```
 
 Testing your changes
 --------------------

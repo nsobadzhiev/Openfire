@@ -1,21 +1,26 @@
-# syntax=docker/dockerfile:1.0.0-experimental
 FROM amazon/aws-cli as aws
+# required build arguments
+ARG AWS_ACCESS_KEY_ID
+ARG AWS_SECRET_ACCESS_KEY
+ARG AWS_REGION
+
 # download push notification credentials from S3, the servers private key and the signed certificate
-RUN --mount=type=secret,id=aws,target=/root/.aws/credentials aws s3 cp s3://com.feinfone.build/apns/apns_key.p8 /usr/local/openfire/authKey.p8 \
+RUN aws configure set default.region $AWS_REGION \
+    && aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID \
+    && aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY \
+    && aws s3 cp s3://com.feinfone.build/apns/apns_key.p8 /usr/local/openfire/authKey.p8 \
     && aws s3 cp s3://com.feinfone.build/cert/feinfone.key /usr/local/openfire/feinfone.key \
     && aws s3 cp s3://com.feinfone.build/cert/feinfone_ca.crt /usr/local/openfire/feinfone_ca.crt
 
-# Maven target to get all dependencies
+# Maven target to build the Openfire artifact
 FROM maven:3.6.2-jdk-11 as packager
 
-# TODO define values via command
-# define the build arguments
-ARG VERSION_DBACCESS=1.2.2
-ARG VERSION_RESTAPI=1.4.0
-ARG VERSION_SUBSCRIPTION=1.4.0
-ARG IMG_TAG
-
+# required build arguments
 ARG KEYSTORE_PWD
+
+ARG AWS_REGION
+ARG AWS_ACCESS_KEY_ID
+ARG AWS_SECRET_ACCESS_KEY
 
 WORKDIR /usr/src
 
@@ -38,49 +43,20 @@ RUN openssl pkcs12 -export -in feinfone_ca.crt -inkey feinfone.key -out keystore
     && keytool -importkeystore -destkeystore keystore -deststorepass $KEYSTORE_PWD -srckeystore keystore.p12 -srcstoretype PKCS12 -srcstorepass $KEYSTORE_PWD
 
 WORKDIR /usr/src
-# get all necessary plugins
-# 1. official plugins
-# DB Access (Official Openfire plugin)
-RUN wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_DBACCESS}/dbaccess.jar -O ./plugins/dbaccess.jar \
-# REST API (Official Openfire plugin)
- && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_RESTAPI}/restAPI.jar -O ./plugins/restAPI.jar \
-# Subscription (Official Openfire plugin)
- && wget https://www.igniterealtime.org/projects/openfire/plugins/${VERSION_SUBSCRIPTION}/subscription.jar -O ./plugins/subscription.jar
 
-# 2. our plugins: clone private repository and use host machines SSH key
-# Download public key for github.com
-RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+# set AWS credentials to let Maven have acces to it
+RUN apt-get update && apt-get -y install awscli \
+    && aws configure set default.region $AWS_REGION \
+    && aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID \
+    && aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
-RUN --mount=type=ssh if [ -z "$IMG_TAG" ] ; then \
-  # [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
-  git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git ./plugins/openfire-avatar-upload-plugin \
-  # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
-  && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git ./plugins/openfire-voice-plugin \
-  # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
-  && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git ./plugins/openfire-apns \
-  # [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
-  && git clone --depth 1 git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git ./plugins/openfire-hazelcast-plugin \
-  # [Addressbook Roster plugin](https://github.com/voiceup-chat/openfire-addressbook-roster-plugin)
-  && git clone --depth 1 git@github.com:voiceup-chat/openfire-addressbook-roster-plugin.git ./plugins/openfire-addressbook-roster-plugin \
-  ; else \
-   # [Avatar upload plugin](https://github.com/voiceup-chat/openfire-avatar-upload-plugin)
-   git clone --depth 1 git@github.com:voiceup-chat/openfire-avatar-upload-plugin.git -b $IMG_TAG ./plugins/openfire-avatar-upload-plugin \
-   # [Voice Upload](https://github.com/voiceup-chat/openfire-voice-plugin)
-   && git clone --depth 1 git@github.com:voiceup-chat/openfire-voice-plugin.git -b $IMG_TAG ./plugins/openfire-voice-plugin \
-   # [Feinfone APNS](https://github.com/voiceup-chat/openfire-apns)
-   && git clone --depth 1 git@github.com:voiceup-chat/openfire-apns.git -b $IMG_TAG ./plugins/openfire-apns \
-   # [Hazelcast plugin](https://github.com/nsobadzhiev/openfire-hazelcast-plugin)
-   && git clone --depth 1 git@github.com:nsobadzhiev/openfire-hazelcast-plugin.git -b $IMG_TAG ./plugins/openfire-hazelcast-plugin \
-   # [Addressbook Roster plugin](https://github.com/voiceup-chat/openfire-addressbook-roster-plugin)
-   && git clone --depth 1 git@github.com:voiceup-chat/openfire-addressbook-roster-plugin.git -b $IMG_TAG ./plugins/openfire-addressbook-roster-plugin \
-  ; fi
+# build with Maven
 
-RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn dependency:go-offline
-
+RUN mvn dependency:go-offline
 COPY . .
-RUN --mount=type=secret,id=aws,target=/root/.aws/credentials mvn package
+RUN mvn package
 
-# build target
+# final image target
 FROM openjdk:11-jre-slim as build
 COPY --from=packager /usr/src/distribution/target/distribution-base /usr/local/openfire
 COPY --from=packager /usr/src/build/docker/entrypoint.sh /sbin/entrypoint.sh
@@ -98,20 +74,6 @@ COPY --from=aws /usr/local/openfire/authKey.p8 .
 
 # copy keystore with self signed certificate
 COPY --from=packager /usr/src/ca/keystore ./resources/security/
-
-# (move all plugin JARs to the plugin folder)
-COPY --from=packager \
-    /usr/src/plugins/dbaccess.jar \
-    /usr/src/plugins/restAPI.jar \
-    /usr/src/plugins/subscription.jar \
-    /usr/src/plugins/openfire-avatar-upload-plugin/target/avatarupload.jar \
-    /usr/src/plugins/openfire-voice-plugin/target/voice.jar \
-    /usr/src/plugins/openfire-apns/target/openfire-apns.jar \
-    /usr/src/plugins/openfire-addressbook-roster-plugin/target/addressbookroster-openfire-plugin-assembly.jar \
-    # add new plugins here
-    ./plugins/
-
-COPY --from=packager /usr/src/plugins/openfire-hazelcast-plugin/target/hazelcast-openfire-plugin-assembly.jar ./plugins/hazelcast.jar
 
 ENV OPENFIRE_USER=openfire \
     OPENFIRE_DIR=/usr/local/openfire \
