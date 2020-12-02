@@ -6,9 +6,6 @@ on:
   push:
     tags:
       - '*'
-    branches:
-      - master
-      - main
 
 # one job and step to deploy
 jobs:
