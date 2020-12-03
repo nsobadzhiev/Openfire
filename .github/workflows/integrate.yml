@@ -53,11 +53,6 @@ jobs:
             runIntegrationTests
             runAioxmppIntegrationTests
             test.gradle
-      - name: Upload coverage report for 'xmppserver' module
-        uses: actions/upload-artifact@v2
-        with:
-          name: Coverage Report for 'xmppserver' module
-          path: xmppserver/target/site/jacoco/
 
   aioxmpp:
 
@@ -69,7 +64,7 @@ jobs:
       - name: Download distribution artifact from build job.
         uses: actions/download-artifact@v2
         with:
-          name: distribution-java${{ matrix.java }}
+          name: distribution-java11
           path: distribution/target/distribution-base
       - name: Download test files from build job.
         uses: actions/download-artifact@v2
@@ -104,7 +99,7 @@ jobs:
       - name: Download distribution artifact from build job.
         uses: actions/download-artifact@v2
         with:
-          name: distribution-java${{ matrix.java }}
+          name: distribution-java11
           path: distribution/target/distribution-base
       - name: Download test files from build job.
         uses: actions/download-artifact@v2
@@ -113,7 +108,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v1
         with:
-          java-version: ${{ matrix.java }}
+          java-version: 11
       - name: Fix file permissions
         run: |
           chmod +x distribution/target/distribution-base/bin/openfire.sh
