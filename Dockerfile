@@ -54,7 +54,7 @@ RUN apt-get update && apt-get -y install awscli \
 
 RUN mvn dependency:go-offline
 COPY . .
-RUN mvn package
+RUN mvn -Denv=release package
 
 # final image target
 FROM openjdk:11-jre-slim as build
