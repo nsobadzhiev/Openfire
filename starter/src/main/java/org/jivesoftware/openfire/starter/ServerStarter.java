@@ -17,39 +17,26 @@
 
 package org.jivesoftware.openfire.starter;
 
-import java.io.File;
-import java.time.Duration;
-import java.util.Map;
-
-import io.micrometer.cloudwatch2.CloudWatchConfig;
-import io.micrometer.cloudwatch2.CloudWatchMeterRegistry;
-import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
-import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient;
-import software.amazon.awssdk.utils.ImmutableMap;
+
+import java.io.File;
 
 /**
  * Starts the core XMPP server. A bootstrap class that configures classloaders
  * to ensure easy, dynamic server startup.
- *
+ * <p>
  * This class should be for standalone mode only. Openfire servers launched
  * through a J2EE container (servlet/EJB) will use those environment's
  * classloading facilities to ensure proper startup.<p>
- *
+ * <p>
  * Tasks:<ul>
- *      <li>Unpack any pack files in the lib directory (Pack200 encoded JAR files).</li>
- *      <li>Add all jars in the lib directory to the classpath.</li>
- *      <li>Add the config directory to the classpath for loadResource()</li>
- *      <li>Start the server</li>
+ * <li>Unpack any pack files in the lib directory (Pack200 encoded JAR files).</li>
+ * <li>Add all jars in the lib directory to the classpath.</li>
+ * <li>Add the config directory to the classpath for loadResource()</li>
+ * <li>Start the server</li>
  * </ul>
- *
+ * <p>
  * Note: if the enviroment property {@code openfire.lib.dir} is specified
  * ServerStarter will attempt to use this value as the value for openfire's lib
  * directory. If the property is not specified the default value of ../lib will be used.
@@ -65,7 +52,7 @@ public class ServerStarter {
      */
     private static final String DEFAULT_LIB_DIR = "../lib";
 
-    public static void main(String [] args) {
+    public static void main(String[] args) {
         new ServerStarter().start();
     }
 
@@ -89,11 +76,10 @@ public class ServerStarter {
                 libDir = new File(libDirString);
                 if (!libDir.exists()) {
                     Log.warn("Lib directory " + libDirString +
-                            " does not exist. Using default " + DEFAULT_LIB_DIR);
+                        " does not exist. Using default " + DEFAULT_LIB_DIR);
                     libDir = new File(DEFAULT_LIB_DIR);
                 }
-            }
-            else {
+            } else {
                 libDir = new File(DEFAULT_LIB_DIR);
             }
 
@@ -101,36 +87,11 @@ public class ServerStarter {
 
             Thread.currentThread().setContextClassLoader(loader);
             Class containerClass = loader.loadClass(
-                    "org.jivesoftware.openfire.XMPPServer");
+                "org.jivesoftware.openfire.XMPPServer");
             containerClass.newInstance();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        // Metrics
-        CloudWatchConfig config = new CloudWatchConfig() {
-
-            private String NAMESPACE_ENV_NAME = "METRICS_NAMESPACE";
-            private String metricNamespace = System.getenv(NAMESPACE_ENV_NAME);
-            private Map<String, String> configuration =
-                ImmutableMap.of("cloudwatch.namespace", metricNamespace != null ? metricNamespace : "chat-local",
-                "cloudwatch.step", Duration.ofMinutes(1).toString());
-
-            @Override
-            public String get(String s) {
-                return configuration.get(s);
-            }
-        };
-
-        CloudWatchMeterRegistry registry = new CloudWatchMeterRegistry(config,
-            Clock.SYSTEM,
-            CloudWatchAsyncClient.create());
-        Metrics.addRegistry(registry);
-        new JvmMemoryMetrics().bindTo(registry);
-        new JvmGcMetrics().bindTo(registry);
-        new ProcessorMetrics().bindTo(registry);
-        new JvmThreadMetrics().bindTo(registry);
-
     }
 
     /**

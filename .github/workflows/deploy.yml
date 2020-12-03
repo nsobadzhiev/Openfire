@@ -38,5 +38,3 @@ jobs:
         run: |
           aws ecr get-login-password --region ${{ matrix.aws_region }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws_region }}.amazonaws.com/${{ matrix.aws_repo }}
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws_region }}.amazonaws.com/${{ matrix.aws_repo }}:${{ env.RELEASE_VERSION }}
-
-      # TODO find a way to use terraform here
