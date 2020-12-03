@@ -350,6 +350,49 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <!-- for tests don't copy our plugins -->
+            <id>test</id>
+            <activation>
+                <property>
+                    <name>env</name>
+                    <value>test</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.1.1</version>
+                        <executions>
+                            <execution>
+                                <id>copy</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.igniterealtime.openfire.plugins</groupId>
+                                    <artifactId>search</artifactId>
+                                    <type>jar</type>
+                                    <classifier>openfire-plugin-assembly</classifier>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>
+                                        ${project.build.directory}${file.separator}distribution-base${file.separator}plugins
+                                    </outputDirectory>
+                                    <destFileName>search.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <repositories>
