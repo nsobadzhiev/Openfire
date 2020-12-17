@@ -460,7 +460,7 @@
         <dependency>
             <groupId>chat.voiceup.openfire.plugins</groupId>
             <artifactId>openfire-apns</artifactId>
-            <version>0.1.3</version>
+            <version>0.1.4</version>
             <classifier>openfire-plugin-assembly</classifier>
             <scope>provided</scope>
         </dependency>
@@ -481,7 +481,7 @@
         <dependency>
             <groupId>chat.voiceup.openfire.plugins</groupId>
             <artifactId>voice</artifactId>
-            <version>0.1.1</version>
+            <version>0.1.2</version>
             <classifier>openfire-plugin-assembly</classifier>
             <scope>provided</scope>
         </dependency>
